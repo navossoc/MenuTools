@@ -3,6 +3,9 @@
 
 #include "stdafx.h"
 #include "MenuTools.h"
+#include "Startup.h"
+
+#include "MenuCommon/Defines.h"
 
 #define MAX_LOADSTRING 100
 
@@ -25,12 +28,15 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
- 	// TODO: Place code here.
-	MSG msg;
-	HACCEL hAccelTable;
-
+	// Single instance
+	Startup startup;
+	if(!startup.CreateJob())
+	{
+		return FALSE;
+	}
+	
 	// Initialize global strings
-	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	LoadString(hInstance, BUILD(IDS_APP_TITLE), szTitle, MAX_LOADSTRING);
 	LoadString(hInstance, IDC_MENUTOOLS, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 
@@ -40,9 +46,11 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
+	HACCEL hAccelTable;
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MENUTOOLS));
 
 	// Main message loop:
+	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
