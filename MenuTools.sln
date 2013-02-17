@@ -5,6 +5,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuTools", "MenuTools\Menu
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuToolsHook", "MenuToolsHook\MenuToolsHook.vcxproj", "{2B5AAC1B-D54C-48D2-8C5A-D12E72030CE4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MenuCommon", "MenuCommon", "{0488CF68-D3FF-4E20-A8DD-E5F8A5ECA0DD}"
+	ProjectSection(SolutionItems) = preProject
+		MenuCommon\Defines.h = MenuCommon\Defines.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
