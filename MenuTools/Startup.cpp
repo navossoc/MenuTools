@@ -72,7 +72,6 @@ BOOL Startup::CreateJob()
 #endif
 
 	return TRUE;
-
 }
 
 BOOL Startup::CreateJobChild()

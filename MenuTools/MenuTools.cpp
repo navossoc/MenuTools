@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "MenuTools.h"
 #include "Startup.h"
+#include "TrayIcon.h"
 
 #include "MenuCommon/Defines.h"
 
@@ -47,6 +48,13 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
+#ifndef _WIN64
+	// Create tray icon
+	TrayIcon tray(szTitle);
+	tray.SetIcon(hInstance, IDI_SMALL);
+	tray.Show(hWnd);
+#endif
+
 	// Main message loop:
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -79,7 +87,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MENUTOOLS));
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= NULL;
+	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_MENUTOOLS);
 	wcex.lpszClassName	= szWindowClass;
 	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -128,6 +136,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+#ifndef _WIN64
+		// Notify icon message
+	case MT_TRAY_MESSAGE:
+		{
+			// Taskbar icon id
+			switch(wParam)
+			{
+			case MT_TRAY_ID:
+				{
+					// Message
+					switch (lParam)
+					{
+					case WM_RBUTTONDOWN:
+						{
+							POINT pt;
+							GetCursorPos(&pt);
+
+							SetForegroundWindow(hWnd);
+
+							HMENU hMenu =  GetSubMenu(GetMenu(hWnd), 0);
+							TrackPopupMenuEx(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, hWnd, NULL);
+							PostMessage(hWnd, WM_NULL, 0, 0);
+						}
+					}
+				}
+				break;
+			}
+
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+#endif
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
