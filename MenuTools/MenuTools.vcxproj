@@ -153,6 +153,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Hooks.h" />
     <ClInclude Include="MenuTools.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Startup.h" />
@@ -161,6 +162,7 @@
     <ClInclude Include="TrayIcon.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="MenuTools.cpp" />
     <ClCompile Include="Startup.cpp" />
     <ClCompile Include="stdafx.cpp">

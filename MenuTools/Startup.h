@@ -4,6 +4,7 @@ class Startup
 public:
 	Startup();
 	~Startup();
+
 	BOOL CreateJob();
 private:
 	BOOL CreateJobChild();

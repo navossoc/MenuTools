@@ -28,6 +28,7 @@ BOOL Startup::CreateJob()
 	}
 
 #ifdef _WIN64
+#if !MT_DEBUG_ONLY_X64
 	// Check if application x64 is running with a job
 	BOOL bIsJob;
 	if(!IsProcessInJob(GetCurrentProcess(), hJob, &bIsJob))
@@ -40,6 +41,7 @@ BOOL Startup::CreateJob()
 	{
 		return FALSE;
 	}
+#endif
 #endif
 
 	// If the job already exists
@@ -57,6 +59,7 @@ BOOL Startup::CreateJob()
 	}
 
 #ifndef _WIN64
+#if !MT_DEBUG_ONLY_X86
 	// Check if application x86 is running on Windows x64
 	BOOL bIsWOW64;
 	if(!IsWow64Process(GetCurrentProcess(), &bIsWOW64))
@@ -69,6 +72,7 @@ BOOL Startup::CreateJob()
 	{
 		return CreateJobChild();
 	}
+#endif
 #endif
 
 	return TRUE;

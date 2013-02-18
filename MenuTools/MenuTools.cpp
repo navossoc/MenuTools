@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "MenuTools.h"
+#include "Hooks.h"
 #include "Startup.h"
 #include "TrayIcon.h"
 
@@ -52,8 +53,22 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// Create tray icon
 	TrayIcon tray(szTitle);
 	tray.SetIcon(hInstance, IDI_SMALL);
-	tray.Show(hWnd);
+	if(!tray.Show(hWnd))
+	{
+		// TODO: L10n
+		MessageBox(hWnd, _T("Failed to create tray icon!"), szTitle, MB_OK);
+		return FALSE;
+	}
 #endif
+
+	// Install wide hooks
+	Hooks hooks;
+	if(!hooks.Install())
+	{
+		// TODO: L10n
+		MessageBox(hWnd, _T("Failed to install hooks!"), szTitle, MB_OK);
+		return FALSE;
+	}
 
 	// Main message loop:
 	MSG msg;
