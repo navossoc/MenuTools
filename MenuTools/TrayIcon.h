@@ -1,8 +1,10 @@
 #include <ShellAPI.h>
 #include <strsafe.h>
 
-#define TRAYICON_ID				1
-#define TRAYICON_MESSAGE		WM_USER+100
+#include "MenuCommon/Defines.h"
+
+#define TRAYICON_ID				MT_TRAY_ID
+#define TRAYICON_MESSAGE		MT_TRAY_MESSAGE
 
 class TrayIcon
 {
