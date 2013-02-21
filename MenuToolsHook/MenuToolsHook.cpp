@@ -2,9 +2,9 @@
 //
 
 #include "stdafx.h"
+#include "MenuTools.h"
 
-#include "MenuCommon/Defines.h"
-#include "MenuCommon/Log.h"
+#define WM_GETSYSMENU						0x313
 
 // Sent messages
 LRESULT CALLBACK CallWndProc(
@@ -27,18 +27,19 @@ LRESULT CALLBACK CallWndProc(
 			case WM_GETSYSMENU:
 				{
 					// Install custom menus
-					//InsertMenu(sMsg->hwnd);
+					if(MenuTools::Install(sMsg->hwnd))
+					{
+						MenuTools::Status(sMsg->hwnd);
+						return 0;
+					}
 				}
 				break;
 			case WM_SYSCOMMAND:
 				{
-					LOGMESSAGE("S: WM_SYSCOMMAND(%08X, %08X)", sMsg->hwnd, sMsg->wParam);
-					/*
-					if(WndProcMenu(sMsg->hwnd, sMsg->wParam))
+					if(MenuTools::WndProc(sMsg->hwnd, sMsg->wParam))
 					{
 						return 0;
 					}
-					*/
 				}
 				break;
 			}
@@ -70,20 +71,21 @@ LRESULT CALLBACK GetMsgProc(
 			case WM_GETSYSMENU:
 				{
 					// Install custom menus
-					//InsertMenu(pMsg->hwnd);
+					if(MenuTools::Install(pMsg->hwnd))
+					{
+						MenuTools::Status(pMsg->hwnd);
+						return 0;
+					}
 				}
 				break;
 			case WM_SYSCOMMAND:
 				{
-					LOGMESSAGE("P: WM_SYSCOMMAND(%08X, %08X)", pMsg->hwnd, pMsg->wParam);
 					if(wParam == PM_REMOVE)
 					{
-						/*
-						if(WndProcMenu(pMsg->hwnd, pMsg->wParam))
+						if(MenuTools::WndProc(pMsg->hwnd, pMsg->wParam))
 						{
 							return 0;
 						}
-						*/
 					}
 				}
 				break;

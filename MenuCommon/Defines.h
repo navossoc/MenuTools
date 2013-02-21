@@ -25,7 +25,6 @@
 #define MT_HOOK_PROC_GMP					"GetMsgProc"
 
 // Hook -> Messages
-#define WM_GETSYSMENU						0x313
 #define MT_HOOK_MSG_QUIT					WM_APP + 0x500
 
 // Menu
