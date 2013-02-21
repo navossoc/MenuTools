@@ -15,7 +15,6 @@ Hooks::~Hooks()
 
 BOOL Hooks::Install()
 {
-
 	// Load hook DLL
 	HMODULE hModDLL = LoadLibrary(BUILD(MT_DLL_NAME));
 	if(!hModDLL)
@@ -52,12 +51,10 @@ BOOL Hooks::Install()
 	}
 
 	return TRUE;
-
 }
 
 BOOL Hooks::Uninstall()
 {
-
 	// Send a especial message to remove menus
 	SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, MT_HOOK_MSG_QUIT, NULL);
 
@@ -76,10 +73,4 @@ BOOL Hooks::Uninstall()
 	}
 
 	return bRetn;
-
 }
-
-/*
-// Remove menus
-SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, 0x4000, NULL);
-*/
