@@ -89,7 +89,9 @@ BOOL Startup::CreateJobChild()
 	}
 
 	// Creates a new process is created in a suspended state
-	if(!CreateProcess(MT_EXE_NAME64, NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi))
+	if(!CreateProcess(MT_EXE_NAME64, NULL, NULL, NULL, FALSE, 
+		CREATE_SUSPENDED | CREATE_BREAKAWAY_FROM_JOB, 
+		NULL, NULL, &si, &pi))
 	{
 		return FALSE;
 	}
