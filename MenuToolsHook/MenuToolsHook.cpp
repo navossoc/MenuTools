@@ -4,6 +4,8 @@
 #include "stdafx.h"
 #include "MenuTools.h"
 
+#include "MenuCommon/Defines.h"
+#include "MenuCommon/Log.h"
 #define WM_GETSYSMENU						0x313
 
 // Sent messages
@@ -29,13 +31,25 @@ LRESULT CALLBACK CallWndProc(
 					// Install custom menus
 					if(MenuTools::Install(sMsg->hwnd))
 					{
+						// Update menu
 						MenuTools::Status(sMsg->hwnd);
 						return 0;
 					}
 				}
 				break;
+			case MT_HOOK_TRAY_MESSAGE:
+				{
+					// Process tray messages
+					if(MenuTools::TrayProc(sMsg->hwnd, sMsg->wParam, sMsg->lParam))
+					{
+						return 0;
+					}
+				}
+				break;
+			case WM_COMMAND:
 			case WM_SYSCOMMAND:
 				{
+					// Process windows messages
 					if(MenuTools::WndProc(sMsg->hwnd, sMsg->wParam))
 					{
 						return 0;
@@ -73,15 +87,27 @@ LRESULT CALLBACK GetMsgProc(
 					// Install custom menus
 					if(MenuTools::Install(pMsg->hwnd))
 					{
+						// Update menu
 						MenuTools::Status(pMsg->hwnd);
 						return 0;
 					}
 				}
 				break;
+			case MT_HOOK_TRAY_MESSAGE:
+				{
+					// Process tray messages
+					if(MenuTools::TrayProc(pMsg->hwnd, pMsg->wParam, pMsg->lParam))
+					{
+						return 0;
+					}
+				}
+				break;
+			case WM_COMMAND:
 			case WM_SYSCOMMAND:
 				{
 					if(wParam == PM_REMOVE)
 					{
+						// Process windows messages
 						if(MenuTools::WndProc(pMsg->hwnd, pMsg->wParam))
 						{
 							return 0;

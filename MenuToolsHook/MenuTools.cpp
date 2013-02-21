@@ -2,6 +2,9 @@
 #include "MenuTools.h"
 
 #include "MenuCommon/Defines.h"
+#include "MenuCommon/Log.h"
+
+NOTIFYICONDATA nid;
 
 BOOL MenuTools::Install(HWND hWnd)
 {
@@ -183,6 +186,31 @@ VOID MenuTools::Status(HWND hWnd)
 	return;
 }
 
+BOOL MenuTools::TrayProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
+{
+	// Tray Icon
+	if(wParam == MT_HOOK_TRAY_ID)
+	{
+		switch(lParam)
+		{
+			// Restore
+		case WM_LBUTTONDBLCLK:
+			{
+				HMENU hMenu = GetSystemMenu(hWnd, FALSE);
+				CheckMenuItem(hMenu, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND | MF_UNCHECKED); 
+
+				Shell_NotifyIcon(NIM_DELETE, &nid);
+				ShowWindow(hWnd, SW_SHOW);
+				SetForegroundWindow(hWnd);
+
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam)
 {
 	int wmId = wParam & 0xFFF0;
@@ -291,13 +319,46 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam)
 		// Minimize to Tray
 	case MT_MENU_MINIMIZE_TO_TRAY:
 		{
-			MessageBox(NULL, _T("MINIMIZE"), _T(""), MB_OK);
+			HMENU hMenu = GetSystemMenu(hWnd, FALSE);
+			UINT fdwMenu = GetMenuState(hMenu, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND);  
+
+			if(!(fdwMenu & MF_CHECKED)) 
+			{ 
+				CheckMenuItem(hMenu, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND | MF_CHECKED); 
+
+				nid.cbSize = sizeof(NOTIFYICONDATA);
+				nid.hWnd = hWnd;
+				nid.uID = MT_HOOK_TRAY_ID;
+				nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+				nid.uCallbackMessage = MT_HOOK_TRAY_MESSAGE;
+				nid.hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICONSM);;
+				GetWindowText(hWnd, nid.szTip, 128);
+				nid.uVersion = NOTIFYICON_VERSION;
+				Shell_NotifyIcon(NIM_ADD, &nid);
+
+				ShowWindow(hWnd, SW_HIDE);
+			}
+			else
+			{
+				HMENU hmenu = GetSystemMenu(hWnd, FALSE);
+				CheckMenuItem(hmenu, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND | MF_UNCHECKED); 
+
+				Shell_NotifyIcon(NIM_DELETE, &nid);
+
+				ShowWindow(hWnd, SW_SHOW);
+				SetForegroundWindow(hWnd);
+			}
+
 			return TRUE;
 		}
 		// Quit message
 	case MT_HOOK_MSG_QUIT:
 		{
+//			MenuTools::TrayProc(hWnd, MT_HOOK_TRAY_ID, WM_LBUTTONDBLCLK);
+
+			// Uninstall menus
 			MenuTools::Uninstall(hWnd);
+
 			return TRUE;
 		}
 	}
