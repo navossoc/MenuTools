@@ -17,5 +17,6 @@ namespace MenuTools
 extern NOTIFYICONDATA nid;
 
 // Helpers
+HICON GetWindowIcon(HWND hWnd);
 BOOL InsertSubMenu(HMENU hMenu, HMENU hSubMenu, UINT uPosition, UINT uFlags, UINT uIDNewItem, LPCWSTR lpNewItem);
 BOOL IsMenuItem(HMENU hMenu, UINT item);

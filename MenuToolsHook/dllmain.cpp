@@ -6,14 +6,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 					  LPVOID lpReserved
 					  )
 {
-	switch (ul_reason_for_call)
-	{
-	case DLL_PROCESS_ATTACH:
-	case DLL_THREAD_ATTACH:
-	case DLL_THREAD_DETACH:
-	case DLL_PROCESS_DETACH:
-		break;
-	}
+	UNREFERENCED_PARAMETER(hModule);
+	UNREFERENCED_PARAMETER(ul_reason_for_call);
+	UNREFERENCED_PARAMETER(lpReserved);
+
 	return TRUE;
 }
 

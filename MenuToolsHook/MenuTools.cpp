@@ -331,7 +331,7 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam)
 				nid.uID = MT_HOOK_TRAY_ID;
 				nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 				nid.uCallbackMessage = MT_HOOK_TRAY_MESSAGE;
-				nid.hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICONSM);;
+				nid.hIcon = GetWindowIcon(hWnd);
 				GetWindowText(hWnd, nid.szTip, 128);
 				nid.uVersion = NOTIFYICON_VERSION;
 				Shell_NotifyIcon(NIM_ADD, &nid);
@@ -367,6 +367,36 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam)
 }
 
 // Helpers
+HICON GetWindowIcon(HWND hWnd)
+{
+	HICON hIcon;
+	hIcon = (HICON) SendMessage(hWnd, WM_GETICON, ICON_SMALL, NULL);
+	if(hIcon)
+	{
+		return hIcon;
+	}
+
+	hIcon = (HICON) SendMessage(hWnd, WM_GETICON, ICON_BIG, NULL);
+	if(hIcon)
+	{
+		return hIcon;
+	}
+	
+	hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICONSM);
+	if(hIcon)
+	{
+		return hIcon;
+	}
+
+	hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICON);
+	if(hIcon)
+	{
+		return hIcon;
+	}
+	
+	return hIcon;
+}
+
 BOOL InsertSubMenu(HMENU hMenu, HMENU hSubMenu, UINT uPosition, UINT uFlags, UINT uIDNewItem, LPCWSTR lpNewItem)
 {
 	if(InsertMenu(hMenu, uPosition, uFlags, (UINT_PTR) hSubMenu, lpNewItem))
