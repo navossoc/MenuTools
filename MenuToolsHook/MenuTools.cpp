@@ -351,16 +351,6 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam)
 
 			return TRUE;
 		}
-		// Quit message
-	case MT_HOOK_MSG_QUIT:
-		{
-//			MenuTools::TrayProc(hWnd, MT_HOOK_TRAY_ID, WM_LBUTTONDBLCLK);
-
-			// Uninstall menus
-			MenuTools::Uninstall(hWnd);
-
-			return TRUE;
-		}
 	}
 
 	return FALSE;

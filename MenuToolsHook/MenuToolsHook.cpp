@@ -8,6 +8,58 @@
 #include "MenuCommon/Log.h"
 #define WM_GETSYSMENU						0x313
 
+// Process messages
+LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_CONTEXTMENU:
+	case WM_INITMENU:
+	case WM_INITMENUPOPUP:
+	case WM_GETSYSMENU:
+		{
+			// Install custom menus
+			if(MenuTools::Install(hWnd))
+			{
+				// Update menu
+				MenuTools::Status(hWnd);
+				return TRUE;
+			}
+		}
+		break;
+	case MT_HOOK_TRAY_MESSAGE:
+		{
+			// Process tray messages
+			MenuTools::TrayProc(hWnd, wParam, lParam);
+			return TRUE;
+		}
+		break;
+	case WM_COMMAND:
+	case WM_SYSCOMMAND:
+		{
+			// Process menu messages
+			MenuTools::WndProc(hWnd, wParam);
+			return TRUE;
+		}
+		break;
+	default:
+		{
+			// Quit message
+			if(message == MT_HOOK_MSG_QUIT)
+			{
+				// TODO: tray
+				//MenuTools::TrayProc(hWnd, MT_HOOK_TRAY_ID, WM_LBUTTONDBLCLK);
+
+				// Uninstall menus
+				MenuTools::Uninstall(hWnd);
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 // Sent messages
 LRESULT CALLBACK CallWndProc(
 	_In_  int nCode,
@@ -20,45 +72,8 @@ LRESULT CALLBACK CallWndProc(
 	case HC_ACTION:
 		{
 			CWPSTRUCT* sMsg = (CWPSTRUCT*) lParam;
-
-			switch (sMsg->message)
-			{
-			case WM_CONTEXTMENU:
-			case WM_INITMENU:
-			case WM_INITMENUPOPUP:
-			case WM_GETSYSMENU:
-				{
-					// Install custom menus
-					if(MenuTools::Install(sMsg->hwnd))
-					{
-						// Update menu
-						MenuTools::Status(sMsg->hwnd);
-						return 0;
-					}
-				}
-				break;
-			case MT_HOOK_TRAY_MESSAGE:
-				{
-					// Process tray messages
-					if(MenuTools::TrayProc(sMsg->hwnd, sMsg->wParam, sMsg->lParam))
-					{
-						return 0;
-					}
-				}
-				break;
-			case WM_COMMAND:
-			case WM_SYSCOMMAND:
-				{
-					// Process windows messages
-					if(MenuTools::WndProc(sMsg->hwnd, sMsg->wParam))
-					{
-						return 0;
-					}
-				}
-				break;
-			}
+			HookProc(sMsg->hwnd, sMsg->message, sMsg->wParam, sMsg->lParam);
 		}
-		break;
 	}
 
 	return CallNextHookEx(NULL, nCode, wParam, lParam);
@@ -75,49 +90,12 @@ LRESULT CALLBACK GetMsgProc(
 	{
 	case HC_ACTION:
 		{
-			MSG* pMsg = (MSG*) lParam;
-
-			switch(pMsg->message)
+			if(wParam == PM_REMOVE)
 			{
-			case WM_CONTEXTMENU:
-			case WM_INITMENU:
-			case WM_INITMENUPOPUP:
-			case WM_GETSYSMENU:
-				{
-					// Install custom menus
-					if(MenuTools::Install(pMsg->hwnd))
-					{
-						// Update menu
-						MenuTools::Status(pMsg->hwnd);
-						return 0;
-					}
-				}
-				break;
-			case MT_HOOK_TRAY_MESSAGE:
-				{
-					// Process tray messages
-					if(MenuTools::TrayProc(pMsg->hwnd, pMsg->wParam, pMsg->lParam))
-					{
-						return 0;
-					}
-				}
-				break;
-			case WM_COMMAND:
-			case WM_SYSCOMMAND:
-				{
-					if(wParam == PM_REMOVE)
-					{
-						// Process windows messages
-						if(MenuTools::WndProc(pMsg->hwnd, pMsg->wParam))
-						{
-							return 0;
-						}
-					}
-				}
-				break;
+				MSG* pMsg = (MSG*) lParam;
+				HookProc(pMsg->hwnd, pMsg->message, pMsg->wParam, pMsg->lParam);
 			}
 		}
-		break;
 	}
 
 	return CallNextHookEx(NULL, code, wParam, lParam);

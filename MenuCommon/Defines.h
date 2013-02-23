@@ -25,7 +25,7 @@
 #define MT_HOOK_PROC_GMP					"GetMsgProc"
 
 // Hook -> Messages
-#define MT_HOOK_MSG_QUIT					WM_APP + 0x500
+#define MT_HOOK_MSG_QUIT					RegisterWindowMessage(_T("MenuToolsQuit"))
 #define MT_HOOK_TRAY_ID						201
 #define MT_HOOK_TRAY_MESSAGE				WM_USER + 0x210
 
