@@ -5,7 +5,8 @@
 #include "MenuTools.h"
 #include "Hooks.h"
 #include "Startup.h"
-#include "TrayIcon.h"
+
+#include "MenuCommon/TrayIcon.h"
 
 #define MAX_LOADSTRING 100
 
@@ -14,6 +15,7 @@ HINSTANCE hInst;								// current instance
 HWND hWnd;										// current window handle
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
+UINT uTrayId;
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -50,9 +52,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 #ifndef _WIN64
 	// Create tray icon
-	TrayIcon tray(szTitle);
-	tray.SetIcon(hInstance, IDI_SMALL);
-	if(!tray.Show(hWnd))
+	TrayIcon tray(hWnd);
+	uTrayId = tray.Show();
+	if(!uTrayId)
 	{
 		// TODO: L10n
 		MessageBox(hWnd, _T("Failed to create tray icon!"), szTitle, MB_OK);
@@ -152,30 +154,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 #ifndef _WIN64
 		// Notify icon message
-	case MT_TRAY_MESSAGE:
+	case TRAYICON_MESSAGE:
 		{
 			// Taskbar icon id
-			switch(wParam)
+			if(wParam == uTrayId)
 			{
-			case MT_TRAY_ID:
+				// Message
+				switch (lParam)
 				{
-					// Message
-					switch (lParam)
+				case WM_RBUTTONDOWN:
 					{
-					case WM_RBUTTONDOWN:
-						{
-							POINT pt;
-							GetCursorPos(&pt);
+						POINT pt;
+						GetCursorPos(&pt);
 
-							SetForegroundWindow(hWnd);
+						SetForegroundWindow(hWnd);
 
-							HMENU hMenu =  GetSubMenu(GetMenu(hWnd), 0);
-							TrackPopupMenuEx(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, hWnd, NULL);
-							PostMessage(hWnd, WM_NULL, 0, 0);
-						}
+						HMENU hMenu =  GetSubMenu(GetMenu(hWnd), 0);
+						TrackPopupMenuEx(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, hWnd, NULL);
+						PostMessage(hWnd, WM_NULL, 0, 0);
 					}
 				}
-				break;
 			}
 
 			return DefWindowProc(hWnd, message, wParam, lParam);

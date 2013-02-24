@@ -4,6 +4,8 @@
 #include "stdafx.h"
 #include "MenuTools.h"
 
+#include "MenuCommon/TrayIcon.h"
+
 #define WM_GETSYSMENU						0x313
 
 // Process messages
@@ -25,7 +27,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 		break;
-	case MT_HOOK_TRAY_MESSAGE:
+	case MT_TRAY_MESSAGE:
 		{
 			// Process tray messages
 			MenuTools::TrayProc(hWnd, wParam, lParam);
@@ -36,7 +38,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SYSCOMMAND:
 		{
 			// Process menu messages
-			MenuTools::WndProc(hWnd, wParam);
+			MenuTools::WndProc(hWnd, wParam, lParam);
 			return TRUE;
 		}
 		break;
@@ -45,8 +47,13 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			// Quit message
 			if(message == MT_HOOK_MSG_QUIT)
 			{
-				// TODO: tray
-				//MenuTools::TrayProc(hWnd, MT_HOOK_TRAY_ID, WM_LBUTTONDBLCLK);
+				// Restore previous windows
+				for(Tray_It it = mTrays.begin(); it != mTrays.end(); it++)
+				{
+					ShowWindow(it->first, SW_SHOW);
+				}
+				// Destroy all tray icons
+				mTrays.clear();
 
 				// Uninstall menus
 				MenuTools::Uninstall(hWnd);

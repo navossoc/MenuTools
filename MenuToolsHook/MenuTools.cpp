@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "MenuTools.h"
 
-NOTIFYICONDATA nid;
+#include "MenuCommon/TrayIcon.h"
 
 BOOL MenuTools::Install(HWND hWnd)
 {
@@ -178,38 +178,48 @@ VOID MenuTools::Status(HWND hWnd)
 	}
 
 	// Minimize to Tray
-	// TODO: code here
+	if(mTrays.count(hWnd))
+	{
+		CheckMenuItem(hMenuSystem, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND | MF_CHECKED); 
+	}
+	else
+	{
+		CheckMenuItem(hMenuSystem, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND | MF_UNCHECKED); 
+	}
 
 	return;
 }
 
 BOOL MenuTools::TrayProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
+	UNREFERENCED_PARAMETER(wParam);
+
 	// Tray Icon
-	if(wParam == MT_HOOK_TRAY_ID)
+	switch(lParam)
 	{
-		switch(lParam)
+		// Restore
+	case WM_LBUTTONDBLCLK:
 		{
-			// Restore
-		case WM_LBUTTONDBLCLK:
+			// Hide tray icon
+			if(mTrays.count(hWnd))
 			{
-				HMENU hMenu = GetSystemMenu(hWnd, FALSE);
-				CheckMenuItem(hMenu, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND | MF_UNCHECKED); 
-
-				Shell_NotifyIcon(NIM_DELETE, &nid);
-				ShowWindow(hWnd, SW_SHOW);
-				SetForegroundWindow(hWnd);
-
-				return TRUE;
+				mTrays.erase(hWnd);
 			}
+
+			ShowWindow(hWnd, SW_SHOW);
+			SetForegroundWindow(hWnd);
+
+			return TRUE;
 		}
 	}
 
 	return FALSE;
 }
 
-BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam)
+BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
+	UNREFERENCED_PARAMETER(lParam);
+
 	int wmId = wParam & 0xFFF0;
 
 	// Handle menu messages
@@ -316,34 +326,25 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam)
 		// Minimize to Tray
 	case MT_MENU_MINIMIZE_TO_TRAY:
 		{
-			HMENU hMenu = GetSystemMenu(hWnd, FALSE);
-			UINT fdwMenu = GetMenuState(hMenu, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND);  
+			// Check if tray is already add
+			if(mTrays.count(hWnd))
+			{
+				// Destroy tray icon
+				mTrays.erase(hWnd);
 
-			if(!(fdwMenu & MF_CHECKED)) 
-			{ 
-				CheckMenuItem(hMenu, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND | MF_CHECKED); 
-
-				nid.cbSize = sizeof(NOTIFYICONDATA);
-				nid.hWnd = hWnd;
-				nid.uID = MT_HOOK_TRAY_ID;
-				nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-				nid.uCallbackMessage = MT_HOOK_TRAY_MESSAGE;
-				nid.hIcon = GetWindowIcon(hWnd);
-				GetWindowText(hWnd, nid.szTip, 128);
-				nid.uVersion = NOTIFYICON_VERSION;
-				Shell_NotifyIcon(NIM_ADD, &nid);
-
-				ShowWindow(hWnd, SW_HIDE);
+				// Restore window
+				ShowWindow(hWnd, SW_SHOW);
+				SetForegroundWindow(hWnd);
 			}
 			else
 			{
-				HMENU hmenu = GetSystemMenu(hWnd, FALSE);
-				CheckMenuItem(hmenu, MT_MENU_MINIMIZE_TO_TRAY, MF_BYCOMMAND | MF_UNCHECKED); 
+				// Insert
+				mTrays.insert(Tray_Pair(hWnd, TrayIcon(hWnd)));
+				// Show tray icon
+				mTrays.at(hWnd).Show();
 
-				Shell_NotifyIcon(NIM_DELETE, &nid);
-
-				ShowWindow(hWnd, SW_SHOW);
-				SetForegroundWindow(hWnd);
+				// Hide window
+				ShowWindow(hWnd, SW_HIDE);
 			}
 
 			return TRUE;
@@ -354,36 +355,6 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam)
 }
 
 // Helpers
-HICON GetWindowIcon(HWND hWnd)
-{
-	HICON hIcon;
-	hIcon = (HICON) SendMessage(hWnd, WM_GETICON, ICON_SMALL, NULL);
-	if(hIcon)
-	{
-		return hIcon;
-	}
-
-	hIcon = (HICON) SendMessage(hWnd, WM_GETICON, ICON_BIG, NULL);
-	if(hIcon)
-	{
-		return hIcon;
-	}
-	
-	hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICONSM);
-	if(hIcon)
-	{
-		return hIcon;
-	}
-
-	hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICON);
-	if(hIcon)
-	{
-		return hIcon;
-	}
-	
-	return hIcon;
-}
-
 BOOL InsertSubMenu(HMENU hMenu, HMENU hSubMenu, UINT uPosition, UINT uFlags, UINT uIDNewItem, LPCWSTR lpNewItem)
 {
 	if(InsertMenu(hMenu, uPosition, uFlags, (UINT_PTR) hSubMenu, lpNewItem))

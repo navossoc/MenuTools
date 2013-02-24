@@ -3,16 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuTools", "MenuTools\MenuTools.vcxproj", "{B2AB229B-B08C-4D3E-9EFE-CDF6B44DFA09}"
 	ProjectSection(ProjectDependencies) = postProject
-		{2B5AAC1B-D54C-48D2-8C5A-D12E72030CE4} = {2B5AAC1B-D54C-48D2-8C5A-D12E72030CE4}
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912} = {44E96425-5FCD-42D4-8BB6-9D15FBEE6912}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuToolsHook", "MenuToolsHook\MenuToolsHook.vcxproj", "{2B5AAC1B-D54C-48D2-8C5A-D12E72030CE4}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MenuCommon", "MenuCommon", "{0488CF68-D3FF-4E20-A8DD-E5F8A5ECA0DD}"
-	ProjectSection(SolutionItems) = preProject
-		MenuCommon\Defines.h = MenuCommon\Defines.h
-		MenuCommon\Logger.h = MenuCommon\Logger.h
+	ProjectSection(ProjectDependencies) = postProject
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912} = {44E96425-5FCD-42D4-8BB6-9D15FBEE6912}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuCommon", "MenuCommon\MenuCommon.vcxproj", "{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +37,14 @@ Global
 		{2B5AAC1B-D54C-48D2-8C5A-D12E72030CE4}.Release|Win32.Build.0 = Release|Win32
 		{2B5AAC1B-D54C-48D2-8C5A-D12E72030CE4}.Release|x64.ActiveCfg = Release|x64
 		{2B5AAC1B-D54C-48D2-8C5A-D12E72030CE4}.Release|x64.Build.0 = Release|x64
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Debug|Win32.ActiveCfg = Debug|Win32
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Debug|Win32.Build.0 = Debug|Win32
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Debug|x64.ActiveCfg = Debug|x64
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Debug|x64.Build.0 = Debug|x64
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Release|Win32.ActiveCfg = Release|Win32
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Release|Win32.Build.0 = Release|Win32
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Release|x64.ActiveCfg = Release|x64
+		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

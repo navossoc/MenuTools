@@ -1,7 +1,3 @@
-#include <tchar.h>
-#include <ShellAPI.h>
-#include <strsafe.h>
-
 namespace MenuTools
 {
 	// Functions
@@ -11,12 +7,9 @@ namespace MenuTools
 
 	// Callback
 	BOOL TrayProc(HWND hWnd, WPARAM wParam, LPARAM lParam);
-	BOOL WndProc(HWND hWnd, WPARAM wParam);
+	BOOL WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam);
 };
 
-extern NOTIFYICONDATA nid;
-
 // Helpers
-HICON GetWindowIcon(HWND hWnd);
 BOOL InsertSubMenu(HMENU hMenu, HMENU hSubMenu, UINT uPosition, UINT uFlags, UINT uIDNewItem, LPCWSTR lpNewItem);
 BOOL IsMenuItem(HMENU hMenu, UINT item);

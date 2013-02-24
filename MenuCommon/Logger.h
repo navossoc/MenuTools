@@ -1,6 +1,5 @@
 // Includes
 #include <tchar.h>
-#include <strsafe.h>
 
 // Defines
 #define MAX_BUFFER				1000
