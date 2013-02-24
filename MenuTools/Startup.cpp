@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "Startup.h"
 
-#include "MenuCommon/Defines.h"
-
 Startup::Startup()
 {
 	ZeroMemory(&si, sizeof(STARTUPINFO));

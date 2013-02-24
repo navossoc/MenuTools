@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "Hooks.h"
 
-#include "MenuCommon/Defines.h"
-
 Hooks::Hooks()
 {
 	//

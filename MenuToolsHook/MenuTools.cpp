@@ -1,9 +1,6 @@
 #include "stdafx.h"
 #include "MenuTools.h"
 
-#include "MenuCommon/Defines.h"
-#include "MenuCommon/Log.h"
-
 NOTIFYICONDATA nid;
 
 BOOL MenuTools::Install(HWND hWnd)

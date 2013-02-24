@@ -7,8 +7,6 @@
 #include "Startup.h"
 #include "TrayIcon.h"
 
-#include "MenuCommon/Defines.h"
-
 #define MAX_LOADSTRING 100
 
 // Global Variables:

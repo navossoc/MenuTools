@@ -19,3 +19,5 @@
 
 
 // TODO: reference additional headers your program requires here
+#include "MenuCommon/Defines.h"
+#include "MenuCommon/Logger.h"

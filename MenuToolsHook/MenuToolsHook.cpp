@@ -4,8 +4,6 @@
 #include "stdafx.h"
 #include "MenuTools.h"
 
-#include "MenuCommon/Defines.h"
-#include "MenuCommon/Log.h"
 #define WM_GETSYSMENU						0x313
 
 // Process messages

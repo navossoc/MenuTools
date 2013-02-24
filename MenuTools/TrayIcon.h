@@ -1,8 +1,6 @@
 #include <ShellAPI.h>
 #include <strsafe.h>
 
-#include "MenuCommon/Defines.h"
-
 #define TRAYICON_ID				MT_TRAY_ID
 #define TRAYICON_MESSAGE		MT_TRAY_MESSAGE
 

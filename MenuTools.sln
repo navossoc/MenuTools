@@ -11,7 +11,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MenuCommon", "MenuCommon", "{0488CF68-D3FF-4E20-A8DD-E5F8A5ECA0DD}"
 	ProjectSection(SolutionItems) = preProject
 		MenuCommon\Defines.h = MenuCommon\Defines.h
-		MenuCommon\Log.h = MenuCommon\Log.h
+		MenuCommon\Logger.h = MenuCommon\Logger.h
 	EndProjectSection
 EndProject
 Global

@@ -11,6 +11,10 @@
 // Windows Header Files:
 #include <windows.h>
 
+// C RunTime Header Files
+#include <tchar.h>
 
 
 // TODO: reference additional headers your program requires here
+#include "MenuCommon/Defines.h"
+#include "MenuCommon/Logger.h"
