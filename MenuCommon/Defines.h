@@ -26,6 +26,7 @@
 
 // Hook -> Messages
 #define MT_HOOK_MSG_QUIT					RegisterWindowMessage(_T("MenuToolsQuit"))
+#define MT_HOOK_MSG_TRAY					WM_USER + 0x210
 
 // Menu
 #define MT_MENU_PRIORITY					WM_USER + 0x2100

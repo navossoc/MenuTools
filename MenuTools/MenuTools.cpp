@@ -53,6 +53,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 #ifndef _WIN64
 	// Create tray icon
 	TrayIcon tray(hWnd);
+	tray.SetCallBackMessage(MT_TRAY_MESSAGE);
 	uTrayId = tray.Show();
 	if(!uTrayId)
 	{
@@ -154,7 +155,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 #ifndef _WIN64
 		// Notify icon message
-	case TRAYICON_MESSAGE:
+	case MT_TRAY_MESSAGE:
 		{
 			// Taskbar icon id
 			if(wParam == uTrayId)

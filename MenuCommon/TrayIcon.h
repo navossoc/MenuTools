@@ -1,7 +1,7 @@
 #include <map>
 #include <ShellAPI.h>
 
-#define TRAYICON_MESSAGE		MT_TRAY_MESSAGE
+#define TRAYICON_MESSAGE		MT_HOOK_MSG_TRAY
 
 class TrayIcon
 {
@@ -9,6 +9,8 @@ class TrayIcon
 public:
 	TrayIcon(HWND hWnd);
 	~TrayIcon();
+
+	void SetCallBackMessage(UINT uMessage);
 
 	UINT Show();
 	BOOL Hide();

@@ -27,7 +27,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 		break;
-	case MT_TRAY_MESSAGE:
+	case MT_HOOK_MSG_TRAY:
 		{
 			// Process tray messages
 			MenuTools::TrayProc(hWnd, wParam, lParam);

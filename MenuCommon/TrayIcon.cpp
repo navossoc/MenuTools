@@ -23,6 +23,11 @@ TrayIcon::~TrayIcon()
 	Hide();	
 }
 
+void TrayIcon::SetCallBackMessage(UINT uMessage)
+{
+	nid.uCallbackMessage = uMessage;
+}
+
 UINT TrayIcon::Show()
 {
 	if(Shell_NotifyIcon(NIM_ADD, &nid))
@@ -47,13 +52,13 @@ HICON TrayIcon::GetWindowIcon(HWND hWnd)
 		return hIcon;
 	}
 
-	hIcon = (HICON) SendMessage(hWnd, WM_GETICON, ICON_BIG, NULL);
+	hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICONSM);
 	if(hIcon)
 	{
 		return hIcon;
 	}
 
-	hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICONSM);
+	hIcon = (HICON) SendMessage(hWnd, WM_GETICON, ICON_BIG, NULL);
 	if(hIcon)
 	{
 		return hIcon;
