@@ -6,6 +6,6 @@
 #define LOGMESSAGE(format, ...)		\
 	{ \
 		TCHAR buffer[MAX_BUFFER+1]; \
-		StringCchPrintfEx(buffer, MAX_BUFFER, NULL, NULL, STRSAFE_IGNORE_NULLS, _T(format) _T("\n"), __VA_ARGS__); \
+		_sntprintf_s(buffer, MAX_BUFFER, _TRUNCATE, _T(format) _T("\n"), __VA_ARGS__); \
 		OutputDebugString(buffer); \
 	}
