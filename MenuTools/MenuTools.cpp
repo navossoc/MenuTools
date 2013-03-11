@@ -40,7 +40,15 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	// Initialize global strings
-	LoadString(hInstance, BUILD(IDS_APP_TITLE), szTitle, MAX_LOADSTRING);
+	BOOL bIsWOW64;
+	if(IsWow64Process(GetCurrentProcess(), &bIsWOW64))
+	{
+		LoadString(hInstance, bIsWOW64 ? IDS_APP_TITLE64 : IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	}
+	else
+	{
+		LoadString(hInstance, BUILD(IDS_APP_TITLE), szTitle, MAX_LOADSTRING);
+	}
 	LoadString(hInstance, IDC_MENUTOOLS, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 

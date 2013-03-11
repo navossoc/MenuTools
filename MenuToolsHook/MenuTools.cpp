@@ -341,10 +341,16 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				// Insert
 				mTrays.insert(Tray_Pair(hWnd, TrayIcon(hWnd)));
 				// Show tray icon
-				mTrays.at(hWnd).Show();
-
-				// Hide window
-				ShowWindow(hWnd, SW_HIDE);
+				if(mTrays.at(hWnd).Show())
+				{
+					// Hide window
+					ShowWindow(hWnd, SW_HIDE);
+				}
+				else
+				{
+					// Destroy tray icon
+					mTrays.erase(hWnd);
+				}
 			}
 
 			return TRUE;
