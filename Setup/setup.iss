@@ -4,7 +4,7 @@
 #define MyAppName "MenuTools"
 #define MyAppVersion "1.0.0.0"
 #define MyAppPublisher "Navossoc Softwares"
-#define MyAppURL "http://www.navossoc.com/"
+#define MyAppURL "http://www.navossoc.com/menutools/"
 #define MyAppExeName "MenuTools.exe"
 #define MyAppWindowClass "MENUTOOLS"
 
