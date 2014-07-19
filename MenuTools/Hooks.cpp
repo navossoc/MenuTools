@@ -15,35 +15,35 @@ BOOL Hooks::Install()
 {
 	// Load hook DLL
 	HMODULE hModDLL = LoadLibrary(BUILD(MT_DLL_NAME));
-	if(!hModDLL)
+	if (!hModDLL)
 	{
 		return FALSE;
 	}
 
 	// CallWndProc function
-	HOOKPROC hkCallWndProc = (HOOKPROC) GetProcAddress(hModDLL, MT_HOOK_PROC_CWP);
-	if(!hkCallWndProc)
+	HOOKPROC hkCallWndProc = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_CWP);
+	if (!hkCallWndProc)
 	{
 		return FALSE;
 	}
 
 	// GetMsgProc function
-	HOOKPROC hkGetMsgProc = (HOOKPROC) GetProcAddress(hModDLL, MT_HOOK_PROC_GMP);
-	if(!hkGetMsgProc)
+	HOOKPROC hkGetMsgProc = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_GMP);
+	if (!hkGetMsgProc)
 	{
 		return FALSE;
 	}
 
 	// Set hook on CallWndProc
 	hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, hModDLL, NULL);
-	if(!hhkCallWndProc)
+	if (!hhkCallWndProc)
 	{
 		return FALSE;
 	}
 
 	// Set hook on GetMessage
 	hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, hModDLL, NULL);
-	if(!hhkGetMessage)
+	if (!hhkGetMessage)
 	{
 		return FALSE;
 	}
@@ -59,13 +59,13 @@ BOOL Hooks::Uninstall()
 	BOOL bRetn = TRUE;
 
 	// Unset the CallWndProc hook
-	if(!UnhookWindowsHookEx(hhkCallWndProc))
+	if (!UnhookWindowsHookEx(hhkCallWndProc))
 	{
 		bRetn = FALSE;
 	}
 
 	// Unset the GetMessage
-	if(!UnhookWindowsHookEx(hhkGetMessage))
+	if (!UnhookWindowsHookEx(hhkGetMessage))
 	{
 		bRetn = FALSE;
 	}

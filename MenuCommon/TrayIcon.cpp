@@ -10,7 +10,7 @@ TrayIcon::TrayIcon(HWND hWnd)
 
 	nid.cbSize = sizeof(NOTIFYICONDATA);
 	nid.hWnd = hWnd;
-	nid.uID = uId ? ++uId : uId=1;
+	nid.uID = uId ? ++uId : uId = 1;
 	nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 	nid.uCallbackMessage = TRAYICON_MESSAGE;
 	nid.hIcon = GetWindowIcon(hWnd);
@@ -20,7 +20,7 @@ TrayIcon::TrayIcon(HWND hWnd)
 
 TrayIcon::~TrayIcon()
 {
-	Hide();	
+	Hide();
 }
 
 void TrayIcon::SetCallBackMessage(UINT uMessage)
@@ -30,7 +30,7 @@ void TrayIcon::SetCallBackMessage(UINT uMessage)
 
 UINT TrayIcon::Show()
 {
-	if(Shell_NotifyIcon(NIM_ADD, &nid))
+	if (Shell_NotifyIcon(NIM_ADD, &nid))
 	{
 		return uId;
 	}
@@ -46,26 +46,26 @@ BOOL TrayIcon::Hide()
 HICON TrayIcon::GetWindowIcon(HWND hWnd)
 {
 	HICON hIcon;
-	hIcon = (HICON) SendMessage(hWnd, WM_GETICON, ICON_SMALL, NULL);
-	if(hIcon)
+	hIcon = (HICON)SendMessage(hWnd, WM_GETICON, ICON_SMALL, NULL);
+	if (hIcon)
 	{
 		return hIcon;
 	}
 
-	hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICONSM);
-	if(hIcon)
+	hIcon = (HICON)GetClassLongPtr(hWnd, GCLP_HICONSM);
+	if (hIcon)
 	{
 		return hIcon;
 	}
 
-	hIcon = (HICON) SendMessage(hWnd, WM_GETICON, ICON_BIG, NULL);
-	if(hIcon)
+	hIcon = (HICON)SendMessage(hWnd, WM_GETICON, ICON_BIG, NULL);
+	if (hIcon)
 	{
 		return hIcon;
 	}
 
-	hIcon = (HICON) GetClassLongPtr(hWnd, GCLP_HICON);
-	if(hIcon)
+	hIcon = (HICON)GetClassLongPtr(hWnd, GCLP_HICON);
+	if (hIcon)
 	{
 		return hIcon;
 	}

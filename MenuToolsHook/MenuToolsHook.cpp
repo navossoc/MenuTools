@@ -17,49 +17,49 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_INITMENU:
 	case WM_INITMENUPOPUP:
 	case WM_GETSYSMENU:
+	{
+		// Install custom menus
+		if (MenuTools::Install(hWnd))
 		{
-			// Install custom menus
-			if(MenuTools::Install(hWnd))
-			{
-				// Update menu
-				MenuTools::Status(hWnd);
-				return TRUE;
-			}
-		}
-		break;
-	case MT_HOOK_MSG_TRAY:
-		{
-			// Process tray messages
-			MenuTools::TrayProc(hWnd, wParam, lParam);
+			// Update menu
+			MenuTools::Status(hWnd);
 			return TRUE;
 		}
 		break;
+	}
+	case MT_HOOK_MSG_TRAY:
+	{
+		// Process tray messages
+		MenuTools::TrayProc(hWnd, wParam, lParam);
+		return TRUE;
+		break;
+	}
 	case WM_COMMAND:
 	case WM_SYSCOMMAND:
+	{
+		// Process menu messages
+		MenuTools::WndProc(hWnd, wParam, lParam);
+		return TRUE;
+		break;
+	}
+	default:
+	{
+		// Quit message
+		if (message == MT_HOOK_MSG_QUIT)
 		{
-			// Process menu messages
-			MenuTools::WndProc(hWnd, wParam, lParam);
+			// Restore previous windows
+			for (Tray_It it = mTrays.begin(); it != mTrays.end(); it++)
+			{
+				ShowWindow(it->first, SW_SHOW);
+			}
+			// Destroy all tray icons
+			mTrays.clear();
+
+			// Uninstall menus
+			MenuTools::Uninstall(hWnd);
 			return TRUE;
 		}
-		break;
-	default:
-		{
-			// Quit message
-			if(message == MT_HOOK_MSG_QUIT)
-			{
-				// Restore previous windows
-				for(Tray_It it = mTrays.begin(); it != mTrays.end(); it++)
-				{
-					ShowWindow(it->first, SW_SHOW);
-				}
-				// Destroy all tray icons
-				mTrays.clear();
-
-				// Uninstall menus
-				MenuTools::Uninstall(hWnd);
-				return TRUE;
-			}
-		}
+	}
 	}
 
 	return FALSE;
@@ -72,13 +72,13 @@ LRESULT CALLBACK CallWndProc(
 	_In_  LPARAM lParam
 	)
 {
-	switch(nCode)
+	switch (nCode)
 	{
 	case HC_ACTION:
-		{
-			CWPSTRUCT* sMsg = (CWPSTRUCT*) lParam;
-			HookProc(sMsg->hwnd, sMsg->message, sMsg->wParam, sMsg->lParam);
-		}
+	{
+		CWPSTRUCT* sMsg = (CWPSTRUCT*)lParam;
+		HookProc(sMsg->hwnd, sMsg->message, sMsg->wParam, sMsg->lParam);
+	}
 	}
 
 	return CallNextHookEx(NULL, nCode, wParam, lParam);
@@ -94,13 +94,13 @@ LRESULT CALLBACK GetMsgProc(
 	switch (code)
 	{
 	case HC_ACTION:
+	{
+		if (wParam == PM_REMOVE)
 		{
-			if(wParam == PM_REMOVE)
-			{
-				MSG* pMsg = (MSG*) lParam;
-				HookProc(pMsg->hwnd, pMsg->message, pMsg->wParam, pMsg->lParam);
-			}
+			MSG* pMsg = (MSG*)lParam;
+			HookProc(pMsg->hwnd, pMsg->message, pMsg->wParam, pMsg->lParam);
 		}
+	}
 	}
 
 	return CallNextHookEx(NULL, code, wParam, lParam);

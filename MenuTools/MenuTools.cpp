@@ -24,9 +24,9 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
-					   _In_opt_ HINSTANCE hPrevInstance,
-					   _In_ LPTSTR    lpCmdLine,
-					   _In_ int       nCmdShow)
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPTSTR    lpCmdLine,
+	_In_ int       nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
@@ -34,14 +34,14 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 	// Single instance
 	Startup startup;
-	if(!startup.CreateJob())
+	if (!startup.CreateJob())
 	{
 		return FALSE;
 	}
 
 	// Initialize global strings
 	BOOL bIsWOW64;
-	if(IsWow64Process(GetCurrentProcess(), &bIsWOW64))
+	if (IsWow64Process(GetCurrentProcess(), &bIsWOW64))
 	{
 		LoadString(hInstance, bIsWOW64 ? IDS_APP_TITLE64 : IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	}
@@ -53,7 +53,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	MyRegisterClass(hInstance);
 
 	// Perform application initialization:
-	if (!InitInstance (hInstance, SW_HIDE))
+	if (!InitInstance(hInstance, SW_HIDE))
 	{
 		return FALSE;
 	}
@@ -63,7 +63,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	TrayIcon tray(hWnd);
 	tray.SetCallBackMessage(MT_TRAY_MESSAGE);
 	uTrayId = tray.Show();
-	if(!uTrayId)
+	if (!uTrayId)
 	{
 		// TODO: L10n
 		MessageBox(hWnd, _T("Failed to create tray icon!"), szTitle, MB_OK);
@@ -73,7 +73,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 	// Install wide hooks
 	Hooks hooks;
-	if(!hooks.Install())
+	if (!hooks.Install())
 	{
 		// TODO: L10n
 		MessageBox(hWnd, _T("Failed to install hooks!"), szTitle, MB_OK);
@@ -88,7 +88,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		DispatchMessage(&msg);
 	}
 
-	return (int) msg.wParam;
+	return (int)msg.wParam;
 }
 
 
@@ -104,17 +104,17 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
 	wcex.cbSize = sizeof(WNDCLASSEX);
 
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= WndProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= hInstance;
-	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MENUTOOLS));
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_MENUTOOLS);
-	wcex.lpszClassName	= szWindowClass;
-	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = hInstance;
+	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MENUTOOLS));
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszMenuName = MAKEINTRESOURCE(IDC_MENUTOOLS);
+	wcex.lpszClassName = szWindowClass;
+	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
 	return RegisterClassEx(&wcex);
 }
@@ -164,32 +164,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 #ifndef _WIN64
 		// Notify icon message
 	case MT_TRAY_MESSAGE:
+	{
+		// Taskbar icon id
+		if (wParam == uTrayId)
 		{
-			// Taskbar icon id
-			if(wParam == uTrayId)
+			// Message
+			switch (lParam)
 			{
-				// Message
-				switch (lParam)
-				{
-				case WM_RBUTTONDOWN:
-					{
-						POINT pt;
-						GetCursorPos(&pt);
+			case WM_RBUTTONDOWN:
+			{
+				POINT pt;
+				GetCursorPos(&pt);
 
-						SetForegroundWindow(hWnd);
+				SetForegroundWindow(hWnd);
 
-						HMENU hMenu =  GetSubMenu(GetMenu(hWnd), 0);
-						TrackPopupMenuEx(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, hWnd, NULL);
-						PostMessage(hWnd, WM_NULL, 0, 0);
-					}
-				}
+				HMENU hMenu = GetSubMenu(GetMenu(hWnd), 0);
+				TrackPopupMenuEx(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, hWnd, NULL);
+				PostMessage(hWnd, WM_NULL, 0, 0);
 			}
-
-			return DefWindowProc(hWnd, message, wParam, lParam);
+			}
 		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
 #endif
 	case WM_COMMAND:
-		wmId    = LOWORD(wParam);
+		wmId = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
 		switch (wmId)
