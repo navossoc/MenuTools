@@ -42,6 +42,50 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 		break;
 	}
+		// Roll-up/Unroll (hard coded for now)
+	case WM_NCMBUTTONUP:
+	{
+		// Title bar
+		if (wParam == HTCAPTION)
+		{
+			// Original window position
+			RECT rect = { 0 };
+			if (GetWindowRect(hWnd, &rect))
+			{
+				long width = rect.right - rect.left;
+				long height = rect.bottom - rect.top;
+
+				// The minimum tracking height of a window
+				int minTrack = GetSystemMetrics(SM_CYMINTRACK);
+
+				// Roll-up
+				if (height != minTrack)
+				{
+					// Save old values
+					wndOldWidth = width;
+					wndOldHeight = height;
+					height = minTrack;
+				}
+				// Unroll
+				else
+				{
+					height = wndOldHeight;
+				}
+
+				// Resize window
+				SetWindowPos(hWnd, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOSENDCHANGING);
+			}
+			else
+			{
+				// On error, try to unroll with old values
+				if (wndOldWidth != -1 && wndOldHeight != -1)
+				{
+					SetWindowPos(hWnd, NULL, 0, 0, wndOldWidth, wndOldHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_NOSENDCHANGING);
+				}
+			}
+		}
+		return TRUE;
+	}
 	default:
 	{
 		// Quit message

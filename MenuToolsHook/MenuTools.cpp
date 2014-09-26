@@ -3,6 +3,10 @@
 
 #include "MenuCommon/TrayIcon.h"
 
+// Window information
+LONG wndOldWidth = -1;
+LONG wndOldHeight = -1;
+
 BOOL MenuTools::Install(HWND hWnd)
 {
 	// Visible window
