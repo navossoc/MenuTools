@@ -4,11 +4,12 @@
 #define CODESIGN                        FALSE
 
 #define MyAppName                       "MenuTools"
-#define MyAppVersion                    "1.0.1"
+#define MyAppVersion                    "1.0.2"
 #define MyAppPublisher                  "Rafael Cossovan de França"
 #define MyAppURL                        "http://www.navossoc.com/menutools/"
 #define MyAppExeName                    "MenuTools.exe"
 #define MyAppWindowClass                "MENUTOOLS"
+#define MyHelperExeName                 "helper.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -57,6 +58,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "startupicon"; Description: "{cm:AutoStartProgram,{#MyAppName}}"; GroupDescription: "{cm:AutoStartProgramGroupDescription}"
 
 [Files]
+Source: "Release\{#MyHelperExeName}"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete;
 Source: "Release\MenuTools.exe"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete;
 Source: "Release\MenuTools64.exe"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete; Check: Is64BitInstallMode
 Source: "Release\MenuToolsHook.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete
@@ -73,6 +75,12 @@ Name: "{commonstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: 
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall runascurrentuser skipifsilent
+Filename: "schtasks"; \
+    Parameters: "/Create /SC ONLOGON /TN ""{#MyAppName}"" /TR ""'{app}\{#MyHelperExeName}'"" /RL HIGHEST /F"; \
+    Flags: runhidden; Tasks: startupicon
+
+[UninstallRun]
+Filename: "schtasks"; Parameters: "/Delete /TN ""{#MyAppName}"" /F"; Flags: runhidden
 
 [Code]
 function InitializeUninstall(): Boolean;

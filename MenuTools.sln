@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuTools", "MenuTools\MenuTools.vcxproj", "{B2AB229B-B08C-4D3E-9EFE-CDF6B44DFA09}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuToolsHook", "MenuToolsH
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuCommon", "MenuCommon\MenuCommon.vcxproj", "{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "helper", "helper\helper.vcxproj", "{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +49,12 @@ Global
 		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Release|Win32.Build.0 = Release|Win32
 		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Release|x64.ActiveCfg = Release|x64
 		{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}.Release|x64.Build.0 = Release|x64
+		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Debug|Win32.Build.0 = Debug|Win32
+		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Debug|x64.ActiveCfg = Debug|Win32
+		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Release|Win32.ActiveCfg = Release|Win32
+		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Release|Win32.Build.0 = Release|Win32
+		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
