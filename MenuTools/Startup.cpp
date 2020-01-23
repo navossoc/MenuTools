@@ -1,11 +1,14 @@
 #include "stdafx.h"
 #include "Startup.h"
 
+#include <ShellAPI.h>
+
 Startup::Startup()
 {
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+	flags = NONE;
 }
 
 Startup::~Startup()
@@ -14,6 +17,31 @@ Startup::~Startup()
 	CloseHandle(pi.hThread);
 
 	CloseHandle(hJob);
+}
+
+BOOL Startup::ParseFlags(LPCWSTR lpCmdLine)
+{
+	LPWSTR *szArglist;
+	int nArgs;
+	szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
+	if (szArglist == NULL)
+	{
+		return FALSE;
+	}
+
+	// Parse command line
+	for (int i = 0; i < nArgs; i++)
+	{
+		if (wcscmp(szArglist[i], L"-hide") == 0)
+		{
+			flags |= Flags::HIDE_TRAY;
+		}
+	}
+
+	// Free memory
+	LocalFree(szArglist);
+
+	return TRUE;
 }
 
 BOOL Startup::CreateJob()

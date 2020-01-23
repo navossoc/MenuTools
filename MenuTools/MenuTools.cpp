@@ -32,8 +32,14 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
-	// Single instance
 	Startup startup;
+	// Command line arguments
+	if (!startup.ParseFlags(GetCommandLineW()))
+	{
+		return FALSE;
+	}
+
+	// Single instance
 	if (!startup.CreateJob())
 	{
 		return FALSE;
@@ -68,6 +74,12 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		// TODO: L10n
 		MessageBox(hWnd, _T("Failed to create tray icon!"), szTitle, MB_OK);
 		return FALSE;
+	}
+
+	// Hide it...
+	if (startup.flags & Startup::HIDE_TRAY)
+	{
+		tray.Hide();
 	}
 #endif
 
