@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.31911.260
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuTools", "MenuTools\MenuTools.vcxproj", "{B2AB229B-B08C-4D3E-9EFE-CDF6B44DFA09}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -16,6 +16,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuCommon", "MenuCommon\MenuCommon.vcxproj", "{44E96425-5FCD-42D4-8BB6-9D15FBEE6912}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "helper", "helper\helper.vcxproj", "{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestApp", "TestApp\TestApp.vcxproj", "{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,8 +57,19 @@ Global
 		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Release|Win32.ActiveCfg = Release|Win32
 		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Release|Win32.Build.0 = Release|Win32
 		{E874E65E-B2BA-4C49-A5EE-8220C7DE6009}.Release|x64.ActiveCfg = Release|Win32
+		{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}.Debug|Win32.ActiveCfg = Debug|Win32
+		{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}.Debug|Win32.Build.0 = Debug|Win32
+		{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}.Debug|x64.ActiveCfg = Debug|x64
+		{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}.Debug|x64.Build.0 = Debug|x64
+		{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}.Release|Win32.ActiveCfg = Release|Win32
+		{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}.Release|Win32.Build.0 = Release|Win32
+		{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}.Release|x64.ActiveCfg = Release|x64
+		{657A43B5-1AB0-4A4C-BF9C-916EFDBC2635}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {911BBDED-6D97-4079-AC54-D86033AEF054}
 	EndGlobalSection
 EndGlobal
