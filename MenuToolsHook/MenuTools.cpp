@@ -375,7 +375,7 @@ BOOL InsertSubMenu(HMENU hMenu, HMENU hSubMenu, UINT uPosition, UINT uFlags, UIN
 		mmi.fMask = MIIM_ID;
 		mmi.wID = uIDNewItem;
 
-		return SetMenuItemInfo(hMenu, (UINT)hSubMenu, FALSE, &mmi);
+		return SetMenuItemInfo(hMenu, TODWORD(hSubMenu), FALSE, &mmi);
 	}
 
 	return FALSE;

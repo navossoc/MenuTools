@@ -2,6 +2,8 @@
 #include "Hooks.h"
 
 Hooks::Hooks()
+	: hhkCallWndProc(NULL)
+	, hhkGetMessage(NULL)
 {
 	//
 }

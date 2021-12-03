@@ -43,7 +43,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 		// Roll-up/Unroll (hard coded for now)
-	case WM_NCMBUTTONUP:
+	case WM_NCRBUTTONUP:
 	{
 		// Title bar
 		if (wParam == HTCAPTION)
@@ -149,3 +149,6 @@ LRESULT CALLBACK GetMsgProc(
 
 	return CallNextHookEx(NULL, code, wParam, lParam);
 }
+
+HOOKPROC hkCallWndProc = CallWndProc;
+HOOKPROC hkGetMsgProc = GetMsgProc;

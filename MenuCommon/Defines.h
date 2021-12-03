@@ -58,3 +58,15 @@
 
 // Tray
 #define MT_TRAY_MESSAGE						WM_USER + 0x200
+
+
+
+#ifdef _WIN64
+#define TODWORD(l)	((DWORD)( (((UINT_PTR)(l)) & 0xffffffff) ))
+//#define TODWORD(l)	((DWORD)( (((UINT_PTR)(l)) & 0xffffffff) == 0xffffffff ) \
+//							? (((UINT_PTR)(l)) & 0xffffffff) \
+//							: ((DWORD)((((UINT_PTR)(l)) >> 32) & 0xffffffff)) ) 
+
+#else
+#define TODWORD(l)           l
+#endif
