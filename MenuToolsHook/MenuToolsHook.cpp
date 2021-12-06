@@ -8,6 +8,8 @@
 
 #define WM_GETSYSMENU						0x313
 
+extern BOOL ShowWindow(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
 // Process messages
 LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -43,8 +45,15 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 		// Roll-up/Unroll (hard coded for now)
-	case WM_NCRBUTTONUP:
-	{
+		case WM_NCLBUTTONDOWN:
+		// Title bar
+		if (wParam == HTCAPTION)
+		{
+			ShowWindow(hWnd, message, wParam, lParam);
+		}
+		return TRUE;
+
+		case WM_NCRBUTTONUP:{
 		// Title bar
 		if (wParam == HTCAPTION)
 		{
