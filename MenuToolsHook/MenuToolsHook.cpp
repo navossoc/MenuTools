@@ -2,13 +2,19 @@
 //
 
 #include "stdafx.h"
-#include "MenuTools.h"
 
+#include <windowsx.h>
+#include <sstream>
+
+#include "MenuTools.h"
 #include "MenuCommon/TrayIcon.h"
+#include <MenuCommon/ScreenToolWnd.h>
 
 #define WM_GETSYSMENU						0x313
 
-extern BOOL ShowWindow(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+extern HINSTANCE hInst;
+POINT lastButtonDown = { 0 };
+WPARAM lastHitTest = 0;
 
 // Process messages
 LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -44,16 +50,52 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 		break;
 	}
-		// Roll-up/Unroll (hard coded for now)
-		case WM_NCLBUTTONDOWN:
-		// Title bar
-		if (wParam == HTCAPTION)
+	case WM_NCLBUTTONDOWN: {
+		if (wParam == HTCAPTION) 
 		{
-			ShowWindow(hWnd, message, wParam, lParam);
+			lastButtonDown = {
+				GET_X_LPARAM(lParam),
+				GET_Y_LPARAM(lParam)
+			};
+			std::wostringstream os;
+			os << L"Button Down: " << lastButtonDown.x << L", " << lastButtonDown.y << std::endl;
+			OutputDebugString(os.str().c_str());
+		}
+		else
+		{
+			lastButtonDown = { 0, 0 };
 		}
 		return TRUE;
+		break;
+	}
 
-		case WM_NCRBUTTONUP:{
+	case WM_LBUTTONUP: {
+		POINT& lbd = lastButtonDown;
+		POINT bu = {
+			GET_X_LPARAM(lParam),
+			GET_Y_LPARAM(lParam)
+		};
+		ClientToScreen(hWnd, &bu);
+		std::wostringstream os;
+		os << L"Button Up: " << bu.x << L", " << bu.y << std::endl;
+		OutputDebugString(os.str().c_str());
+		if (std::abs(lbd.x - bu.x) > 2 || std::abs(lbd.y - bu.y) > 2)
+			return FALSE;
+
+		wParam = SendMessage(hWnd, WM_NCHITTEST, wParam, lParam);
+
+		// Title bar
+		if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
+		{
+			static ScreenToolWnd::Ptr pWnd;
+			pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, lParam);
+		}
+		return FALSE;
+		break;
+	}
+
+	// Roll-up/Unroll (hard coded for now)
+	case WM_NCRBUTTONUP:{
 		// Title bar
 		if (wParam == HTCAPTION)
 		{

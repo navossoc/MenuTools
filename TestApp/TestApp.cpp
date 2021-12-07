@@ -39,14 +39,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     LoadStringW(hInstance, IDC_TESTAPP, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
-	WNDCLASSW d1 = { 0 };
-	d1.hbrBackground = (HBRUSH)COLOR_WINDOW;
-	d1.hCursor = LoadCursor(NULL, IDC_ARROW);
-	d1.hInstance = hInst;
-	d1.lpszClassName = L"myDialogClass";
-	d1.lpfnWndProc = DoIt;
-
-	RegisterClassW(&d1);
 
     // Perform application initialization:
     if (!InitInstance (hInstance, nCmdShow))
@@ -210,57 +202,3 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-INT_PTR CALLBACK DoIt(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message)
-	{
-    case WM_LBUTTONDOWN:
-		DestroyWindow(hWnd);
-		break;
-
-	case WM_INITDIALOG:
-        SetWindowLong(hDlg, GWL_STYLE, GetWindowLong(hDlg, GWL_STYLE) & ~(WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_THICKFRAME));
-		POINT pt;
-		GetCursorPos(&pt);
-        RECT rct;
-        GetWindowRect(hDlg, &rct);
-        SetWindowPos(hDlg, HWND_TOP, pt.x - ((rct.right - rct.left) / 2), pt.y, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
-		return (INT_PTR)TRUE;
-
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		}
-		break;
-
-	case WM_CLOSE:
-		DestroyWindow(hWnd);
-		break;
-	default:
-		return DefWindowProcW(hWnd, message, wParam, lParam);
-	}
-
-	return (INT_PTR)FALSE;
-}
-
-bool isOpen = false;
-BOOL ShowWindow(HWND _hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    if (_hWnd == hWnd) 
-    {
-		//HWND hDlg = CreateWindowW(L"myDialogClass", L"New Product", WS_VISIBLE | WS_CHILD, 0, 0, 200, 200, hWnd, NULL, NULL, NULL);         // create child window
-		//ShowWindow(hDlg, SW_SHOW);
-
-		//CreateNewItem(hDlg);
-
-	    //POINT pt;
-	    //GetCursorPos(&pt);
-        //HWND hDialog = CreateDialogIndirectParam(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, (DLGPROC)DoIt, (LPARAM)0);
-		if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), _hWnd, (DLGPROC)DoIt) == IDOK)
-          return TRUE;
-
-    }
-    return FALSE;
-}
