@@ -53,9 +53,6 @@
     <ClCompile Include="..\MenuCommon\TrayIcon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\MenuCommon\ScreenToolWnd .cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\MenuCommon\ScreenToolWnd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

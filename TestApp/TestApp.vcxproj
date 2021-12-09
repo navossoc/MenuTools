@@ -170,7 +170,6 @@
     <ClInclude Include="TestApp.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\MenuCommon\ScreenToolWnd .cpp" />
     <ClCompile Include="..\MenuCommon\ScreenToolWnd.cpp" />
     <ClCompile Include="..\MenuCommon\TrayIcon.cpp" />
     <ClCompile Include="..\MenuToolsHook\MenuTools.cpp" />

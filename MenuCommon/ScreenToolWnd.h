@@ -15,4 +15,5 @@ private:
 	struct Impl;
 	std::unique_ptr<Impl> _pImpl;
 	//~ScreenToolWnd();
+	//friend LRESULT CALLBACK ToolWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 };
