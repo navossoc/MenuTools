@@ -17,7 +17,7 @@ struct ScreenToolWnd::Impl
 	~Impl();
 
 	HWND _hWnd;
-	std::vector<RECT> _screenRects, _partRects;
+	std::vector<RECT> _bigScrRects, _smallScrRects, _bigPartRects, _smallPartRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	static std::map<HWND, ScreenToolWnd::Impl*> hWndToImplMap;
@@ -40,7 +40,7 @@ namespace
 	const std::wstring CLASS_NAME = L"ScreenToolWnd";
 	WNDCLASSW* wndClass = nullptr;
 
-	static const LONG F = 12; // factor
+	static const FLOAT F = 0.1f; // factor
 }
 
 BOOL ScreenToolWnd::IsScreenToolWnd(HWND hWnd)
@@ -68,6 +68,18 @@ BOOL Monitorenumproc(HMONITOR hMon, HDC hDC, LPRECT pRECT, LPARAM lParam)
 	return TRUE;
 }
 
+RECT ScaleRect(RECT& in, FLOAT f)
+{
+	RECT r = { 0 };
+
+	r.right = static_cast<LONG>(((FLOAT)((in.right - in.left) + in.left)) * f);
+	r.bottom = static_cast<LONG>(((FLOAT)((in.bottom - in.top) + in.top)) * f);
+	r.left = static_cast<LONG>(((FLOAT)in.left) * f);
+	r.top = static_cast<LONG>(((FLOAT)in.top) * f);
+
+	return r;
+}
+
 LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT res = 0;
@@ -76,40 +88,70 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	GetCursorPos(&pt);
 	ScreenToClient(hWnd, &pt);
 
+	LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
+	LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
+
+	RECT currentPart = { 0 };
+	auto cp_it = std::ranges::find_if(
+		_smallPartRects.rbegin(), _smallPartRects.rend(),
+		[&pt, ix, iy](RECT r) {
+			InflateRect(&r, -ix * 4, -iy * 4);
+			return PtInRect(&r, pt); 
+		});
+
+	if (cp_it != _smallPartRects.rend())
+		currentPart = *cp_it;
+
+	auto scr_it = std::ranges::find_if(_smallScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); });
+
 	switch (message)
 	{
 	case WM_LBUTTONDOWN:
+	{
+		if (scr_it != _smallScrRects.end())
+		{
+			auto part_it = std::ranges::find_if(_smallPartRects,
+				[&currentPart](RECT& r) {return EqualRect(&r, &currentPart); });
+			size_t i1 = std::distance(_smallPartRects.begin(), part_it);
+			size_t i2 = std::distance(_smallScrRects.begin(), scr_it);
+			RECT r = _bigPartRects[i1], scr = _bigScrRects[i2];
+
+			if (r.left == scr.left || r.top == scr.top || r.right == scr.right || r.bottom == scr.bottom)
+				InflateRect(&r, (scr.right - scr.left) / 100 * 15, (scr.bottom - scr.top) / 100 * 15);
+
+			HWND hParent = GetParent(hWnd);
+			SetWindowPos(hParent, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+		}
+
 		DestroyWindow(hWnd);
 		break;
+	}
 
 	case WM_MOUSEMOVE:
 	{
-		auto it = std::ranges::find_if(_screenRects, [&pt](RECT& r) {return PtInRect(&r, pt); });
-		if(it != _screenRects.end())
-			InvalidateRect(hWnd, &*it, FALSE);
+		if(scr_it != _smallScrRects.end())
+			InvalidateRect(hWnd, &*scr_it, FALSE);
 		break;
 	}
 
 	case WM_PAINT:
 	{
+		InflateRect(&currentPart, -ix * 4, -iy * 4);
+
 		PAINTSTRUCT ps;
 		HDC hDC = BeginPaint(hWnd, &ps);
 
-
-		LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
-		LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
-
-		for (RECT sr : _screenRects) // screen rect		
+		for (RECT sr : _smallScrRects) // screen rect		
 		{
 			InflateRect(&sr, -ix, -iy);
 			FillRect(hDC, &sr, GetSysColorBrush(COLOR_ACTIVEBORDER));
 			FrameRect(hDC, &sr, GetSysColorBrush(COLOR_HOTLIGHT));			
 		}
 
-		for (RECT pr : _partRects) // part rect	
+		for (RECT pr : _smallPartRects) // part rect	
 		{
 			InflateRect(&pr, -ix * 4, -iy * 4);
-			FillRect(hDC, &pr, GetSysColorBrush(PtInRect(&pr, pt) ? COLOR_ACTIVECAPTION : COLOR_INACTIVECAPTION));
+			FillRect(hDC, &pr, GetSysColorBrush(EqualRect(&pr, &currentPart) ? COLOR_ACTIVECAPTION : COLOR_INACTIVECAPTION));
 			FrameRect(hDC, &pr, GetSysColorBrush(COLOR_HOTLIGHT));
 			//std::wostringstream os;
 			//os << L"x: " << pr.left << L" y: " << pr.top << L" w: " << pr.right - pr.left << L" h: " << pr.bottom - pr.top;
@@ -143,12 +185,13 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 
 	std::vector<RECT> mInfos;
 	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&mInfos);
-	_screenRects = mInfos;	
+	_bigScrRects = mInfos;	
 
 	LONG ox = 0, oy = 0; // offset
 
-	for (RECT& sr : _screenRects) // screen rect
+	for (RECT& sr : _bigScrRects) // screen rect
 	{
+		LONG F = 1;
 		sr.right = ((sr.right - sr.left) + sr.left) / F;
 		sr.bottom = ((sr.bottom - sr.top) + sr.top) / F;
 		sr.left = sr.left / F;
@@ -157,8 +200,9 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		oy = min(sr.top, oy);
 	}
 
+
 	RECT wr = { 0 }; // window rect
-	for (RECT& sr : _screenRects)
+	for (RECT& sr : _bigScrRects)
 	{
 		OffsetRect(&sr, -ox, -oy);
 
@@ -168,7 +212,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		wr.bottom = max( sr.bottom, wr.bottom );
 	}
 
-	for (RECT& sr : _screenRects)
+	for (RECT& sr : _bigScrRects)
 	{
 		LONG sw = (sr.right - sr.left);
 		LONG sh = (sr.bottom - sr.top);
@@ -178,47 +222,57 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 			// left
 			RECT left = { sr.left, sr.top, sr.left + sw / 2, sr.bottom };
 			InflateRect(&left, 2, 2);
-			_partRects.push_back(left);
+			_bigPartRects.push_back(left);
 
 			// right
 			RECT right = { sr.left + sw / 2, sr.top, sr.left + sr.left + sw, sr.bottom };
-			_partRects.push_back(right);
+			_bigPartRects.push_back(right);
 		}
 		else
 		{
 			// top
 			RECT top = { sr.left, sr.top, sr.left + sw, sr.bottom - sh / 2 };
 			InflateRect(&top, 2, 2);
-			_partRects.push_back(top);
+			_bigPartRects.push_back(top);
 
 			// bottom
 			RECT bottom = { sr.left, sr.top + sh / 2, sr.left + sw, sr.bottom };
-			_partRects.push_back(bottom);
+			_bigPartRects.push_back(bottom);
 		}
 
 		// top left
 		RECT pr = { sr.left + 2, sr.top, sr.left + sw / 2, sr.top + sh / 2 };
-		_partRects.push_back(pr);
+		_bigPartRects.push_back(pr);
 		// top right
 		OffsetRect(&pr, sw / 2 - 2, 0);
-		_partRects.push_back(pr);
+		_bigPartRects.push_back(pr);
 		// bottom right
 		OffsetRect(&pr, 0, sh / 2);
-		_partRects.push_back(pr);
+		_bigPartRects.push_back(pr);
 		// bottom left
 		OffsetRect(&pr, -(sw / 2 ), 0);
-		_partRects.push_back(pr);
+		_bigPartRects.push_back(pr);
 
 		// small center
 		RECT sc = sr;
 		InflateRect(&sc, -(sw / 8), -(sh / 8));
-		_partRects.push_back(sc);
+		_bigPartRects.push_back(sc);
 
 		// big center
 		RECT bc = sr;
 		InflateRect(&bc, -(sw / 4), -(sh / 4));
-		_partRects.push_back(bc);
+		_bigPartRects.push_back(bc);
 	}
+
+	_smallScrRects.clear();
+	std::ranges::transform(_bigScrRects, std::back_inserter(_smallScrRects),
+		[](RECT& r) {return ScaleRect(r, F); });
+
+	_smallPartRects.clear();
+	std::ranges::transform(_bigPartRects, std::back_inserter(_smallPartRects),
+		[](RECT& r) {return ScaleRect(r, F); });
+
+	wr = ScaleRect(wr, F);
 
 	LONG w = (wr.right - wr.left) + GetSystemMetrics(SM_CXBORDER) * 2;
 	LONG h = (wr.bottom - wr.top) + GetSystemMetrics(SM_CYBORDER) * 2;
