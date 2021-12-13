@@ -2,14 +2,108 @@
 #include "ScreenToolWnd.h"
 
 #include <string>
+#include <format>
 #include <sstream>
 #include <vector>
 #include <ranges>
 #include <algorithm>
 #include <functional>
 #include <map>
+#include <limits>
 
 using namespace std::placeholders;
+
+
+enum class WinPos : unsigned char { HT, HB, HL, HR, TL, TR, BL, BR, SC, BC };
+
+constexpr std::wostringstream& operator<<(std::wostringstream& os, WinPos wp)
+{
+	switch (wp)
+	{
+	case WinPos::HT:
+		 os << L"HalfTop";
+		 break;
+	case WinPos::HB:
+		os << L"HalfBottom";
+		break;
+	case WinPos::HL:
+		os << L"HalfLeft";
+		break;
+	case WinPos::HR:
+		os << L"HalfRight";
+		break;
+	case WinPos::TL:
+		os << L"TopLeft";
+		break;
+	case WinPos::TR:
+		os << L"TopRight";
+		break;
+	case WinPos::BL:
+		os << L"BottomLeft";
+		break;
+	case WinPos::BR:
+		os << L"BottomRight";
+		break;
+	case WinPos::SC:
+		os << L"SmallCenter";
+		break;
+	case WinPos::BC:
+		os << L"BigCenter";
+		break;
+	default:
+		os << L"";
+		break;
+	}
+	return os;
+}
+
+template <>
+struct std::formatter<WinPos> : std::formatter<std::wstring> {
+	auto format(WinPos wp, wformat_context& ctx) {
+		std::wostringstream os;
+		os << wp;
+		return os.str();
+	}
+};
+
+constexpr WinPos& operator ++(WinPos& wp)
+{
+	switch (wp)
+	{
+	case WinPos::HT:
+		wp = WinPos::HB;
+		break;
+	case WinPos::HB:
+		wp = WinPos::HL;
+		break;
+	case WinPos::HL:
+		wp = WinPos::HR;
+		break;
+	case WinPos::HR:
+		wp = WinPos::TL;
+		break;
+	case WinPos::TL:
+		wp = WinPos::TR;
+		break;
+	case WinPos::TR:
+		wp = WinPos::BL;
+		break;
+	case WinPos::BL:
+		wp = WinPos::BR;
+		break;
+	case WinPos::BR:
+		wp = WinPos::SC;
+		break;
+	case WinPos::SC:
+		wp = WinPos::BC;
+		break;
+	default:
+		wp = WinPos::HT;
+		break;
+	}
+	return wp;
+}
+
 
 struct ScreenToolWnd::Impl
 {
@@ -210,8 +304,8 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		sr.bottom = ((sr.bottom - sr.top) + sr.top) / F;
 		sr.left = sr.left / F;
 		sr.top = sr.top / F;
-		ox = min(sr.left, ox);
-		oy = min(sr.top, oy);
+		ox = std::min(sr.left, ox);
+		oy = std::min(sr.top, oy);
 	}
 
 
@@ -220,13 +314,12 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	{
 		OffsetRect(&sr, -ox, -oy);
 
-		wr.left = min( sr.left, wr.left );
-		wr.top = min( sr.top, wr.top );
-		wr.right = max( sr.right, wr.right );
-		wr.bottom = max( sr.bottom, wr.bottom );
+		wr.left = std::min( sr.left, wr.left );
+		wr.top = std::min( sr.top, wr.top );
+		wr.right = std::max( sr.right, wr.right );
+		wr.bottom = std::max( sr.bottom, wr.bottom );
 	}
 
-	enum {HT, HB, HL, HR, TL, TR, BL, BR, SC, BC};
 
 	for (RECT& sr : _bigScrRects)
 	{
@@ -304,44 +397,52 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	LONG ib = 20;
 	LONG is = 8;
 
-	InflateRect(&_bigPartRects[HL], -ib, -ib);
-	OffsetRect(&_bigPartRects[HL], ib, 0);
-	InflateRect(&_smallPartRects[HL], -is / 2, 0);
-	OffsetRect(&_smallPartRects[HL], -ib /2, 0);
+	InflateRect(&_bigPartRects[(size_t)WinPos::HL], -ib, -ib);
+	OffsetRect(&_bigPartRects[(size_t)WinPos::HL], ib, 0);
+	InflateRect(&_smallPartRects[(size_t)WinPos::HL], -is / 2, 0);
+	OffsetRect(&_smallPartRects[(size_t)WinPos::HL], -ib /2, 0);
 
-	InflateRect(&_bigPartRects[HR], -ib, -ib);
-	OffsetRect(&_bigPartRects[HR], -ib, 0);
-	InflateRect(&_smallPartRects[HR], -is, 0 / 2);
-	OffsetRect(&_smallPartRects[HR], ib / 2, 0);
+	InflateRect(&_bigPartRects[(size_t)WinPos::HR], -ib, -ib);
+	OffsetRect(&_bigPartRects[(size_t)WinPos::HR], -ib, 0);
+	InflateRect(&_smallPartRects[(size_t)WinPos::HR], -is, 0 / 2);
+	OffsetRect(&_smallPartRects[(size_t)WinPos::HR], ib / 2, 0);
 
-	InflateRect(&_bigPartRects[HT], -ib, -ib);
-	OffsetRect(&_bigPartRects[HT], 0, ib);
-	InflateRect(&_smallPartRects[HT], 0, -is / 2);
-	OffsetRect(&_smallPartRects[HT], 0, -ib / 2);
+	InflateRect(&_bigPartRects[(size_t)WinPos::HT], -ib, -ib);
+	OffsetRect(&_bigPartRects[(size_t)WinPos::HT], 0, ib);
+	InflateRect(&_smallPartRects[(size_t)WinPos::HT], 0, -is / 2);
+	OffsetRect(&_smallPartRects[(size_t)WinPos::HT], 0, -ib / 2);
 
-	InflateRect(&_bigPartRects[HB], -ib, -ib);
-	OffsetRect(&_bigPartRects[HB], 0, -ib);
-	InflateRect(&_smallPartRects[HB], 0, -is / 2);
-	OffsetRect(&_smallPartRects[HB], 0, ib / 2);
+	InflateRect(&_bigPartRects[(size_t)WinPos::HB], -ib, -ib);
+	OffsetRect(&_bigPartRects[(size_t)WinPos::HB], 0, -ib);
+	InflateRect(&_smallPartRects[(size_t)WinPos::HB], 0, -is / 2);
+	OffsetRect(&_smallPartRects[(size_t)WinPos::HB], 0, ib / 2);
 
-	InflateRect(&_bigPartRects[TL], -ib, -ib);
-	OffsetRect(&_bigPartRects[TL], ib, ib);
-	InflateRect(&_smallPartRects[TL], -is, -is);
+	InflateRect(&_bigPartRects[(size_t)WinPos::TL], -ib, -ib);
+	OffsetRect(&_bigPartRects[(size_t)WinPos::TL], ib, ib);
+	InflateRect(&_smallPartRects[(size_t)WinPos::TL], -is, -is);
 
-	InflateRect(&_bigPartRects[TR], -ib, -ib);
-	OffsetRect(&_bigPartRects[TR], -ib, ib);
-	InflateRect(&_smallPartRects[TR], -is, -is);
+	InflateRect(&_bigPartRects[(size_t)WinPos::TR], -ib, -ib);
+	OffsetRect(&_bigPartRects[(size_t)WinPos::TR], -ib, ib);
+	InflateRect(&_smallPartRects[(size_t)WinPos::TR], -is, -is);
 
-	InflateRect(&_bigPartRects[BL], -ib, -ib);
-	OffsetRect(&_bigPartRects[BL], ib, -ib);
-	InflateRect(&_smallPartRects[BL], -is, -is);
+	InflateRect(&_bigPartRects[(size_t)WinPos::BL], -ib, -ib);
+	OffsetRect(&_bigPartRects[(size_t)WinPos::BL], ib, -ib);
+	InflateRect(&_smallPartRects[(size_t)WinPos::BL], -is, -is);
 
-	InflateRect(&_bigPartRects[BR], -ib, -ib);
-	OffsetRect(&_bigPartRects[BR], -ib, -ib);
-	InflateRect(&_smallPartRects[BR], -is, -is);
+	InflateRect(&_bigPartRects[(size_t)WinPos::BR], -ib, -ib);
+	OffsetRect(&_bigPartRects[(size_t)WinPos::BR], -ib, -ib);
+	InflateRect(&_smallPartRects[(size_t)WinPos::BR], -is, -is);
 
-	InflateRect(&_smallPartRects[SC], -is, -is);
-	InflateRect(&_smallPartRects[BC], -is, -is);
+	InflateRect(&_smallPartRects[(size_t)WinPos::SC], -is, -is);
+	InflateRect(&_smallPartRects[(size_t)WinPos::BC], -is, -is);
+
+
+	for (WinPos wp = std::numeric_limits<WinPos>::min(); wp <= std::numeric_limits<WinPos>::max(); ++wp)
+	{
+		std::wostringstream os;
+		os << wp;
+		OutputDebugString(std::format(L"{}\n", os.str()).c_str());
+	}
 
 	wr = ScaleRect(wr, F);
 
