@@ -10,8 +10,10 @@
 #include <functional>
 #include <map>
 #include <limits>
+#include <numeric>
 
 using namespace std::placeholders;
+std::wstring wm_to_wstring(UINT msg);
 
 
 enum class WinPos : unsigned char { HT, HB, HL, HR, TL, TR, BL, BR, SC, BC };
@@ -177,6 +179,7 @@ RECT ScaleRect(RECT& in, FLOAT f)
 
 LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	OutputDebugString(std::format(L"Message: {}\n", wm_to_wstring(message)).c_str());
 	LRESULT res = 0;
 
 	POINT pt;
@@ -266,6 +269,16 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		EndPaint(hWnd, &ps);
 		break;
 	}
+
+	case WM_KEYDOWN: if (wParam == VK_ESCAPE)
+			DestroyWindow(hWnd);
+		else
+		{
+			wchar_t strDataToSend[32];
+			wsprintf(strDataToSend, L"%c", wParam);
+			MessageBox(NULL, strDataToSend, L"keyselected", MB_OK);
+		}
+		break;
 	}
 
 	return  DefWindowProc(hWnd, message, wParam, lParam);
@@ -454,10 +467,11 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	OffsetRect(&wr, pt.x - (w / 2), pt.y);
 
 	_hWnd = CreateWindowEx(
-		WS_EX_TOPMOST ,//| WS_EX_TOOLWINDOW Optional window styles.
+		WS_EX_TOPMOST | WS_EX_TOOLWINDOW,// Optional window styles.
 		CLASS_NAME.c_str(),                     // Window class
-		L"Learn to Program Windows",    // Window text
-		WS_POPUP | WS_VISIBLE | WS_BORDER,            // WS_OVERLAPPEDWINDOW Window style
+		L"Pick a rectangle",    // Window text
+		//WS_POPUP | WS_VISIBLE | WS_BORDER,           
+		WS_OVERLAPPEDWINDOW, // Window style
 
 		// Size and position
 		//CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -471,7 +485,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	if (_hWnd)
 	{
 		hWndToImplMap[_hWnd] = this;
-		//::ShowWindow(_hWnd, SW_SHOW);
+		::ShowWindow(_hWnd, SW_SHOW);
 		//SetActiveWindow(_hWnd);
 	}
 }
@@ -481,4 +495,43 @@ ScreenToolWnd::Impl::~Impl()
 	hWndToImplMap.erase(_hWnd);
 	//SendMessage(_hWnd, WM_CLOSE, 0, 0);
 	DestroyWindow(_hWnd);
+}
+
+std::wstring wm_to_wstring(UINT msg)
+{
+	switch (msg)
+	{
+	case WM_CTLCOLORMSGBOX: return std::format(L"WM_CTLCOLORMSGBOX {:#08x}", WM_CTLCOLORMSGBOX);
+	case WM_CTLCOLOREDIT: return std::format(L"WM_CTLCOLOREDIT {:#08x}", WM_CTLCOLOREDIT);
+	case WM_CTLCOLORLISTBOX: return std::format(L"WM_CTLCOLORLISTBOX {:#08x}", WM_CTLCOLORLISTBOX);
+	case WM_CTLCOLORBTN: return std::format(L"WM_CTLCOLORBTN {:#08x}", WM_CTLCOLORBTN);
+	case WM_CTLCOLORDLG: return std::format(L"WM_CTLCOLORDLG {:#08x}", WM_CTLCOLORDLG);
+	case WM_CTLCOLORSCROLLBAR: return std::format(L"WM_CTLCOLORSCROLLBAR {:#08x}", WM_CTLCOLORSCROLLBAR);
+	case WM_CTLCOLORSTATIC: return std::format(L"WM_CTLCOLORSTATIC {:#08x}", WM_CTLCOLORSTATIC);
+	case MN_GETHMENU: return std::format(L"MN_GETHMENU {:#08x}", MN_GETHMENU);
+	case WM_MOUSEMOVE: return std::format(L"WM_MOUSEMOVE {:#08x}", WM_MOUSEMOVE);
+	case WM_LBUTTONDOWN: return std::format(L"WM_LBUTTONDOWN {:#08x}", WM_LBUTTONDOWN);
+	case WM_LBUTTONUP: return std::format(L"WM_LBUTTONUP {:#08x}", WM_LBUTTONUP);
+	case WM_LBUTTONDBLCLK: return std::format(L"WM_LBUTTONDBLCLK {:#08x}", WM_LBUTTONDBLCLK);
+	case WM_RBUTTONDOWN: return std::format(L"WM_RBUTTONDOWN {:#08x}", WM_RBUTTONDOWN);
+	case WM_RBUTTONUP: return std::format(L"WM_RBUTTONUP {:#08x}", WM_RBUTTONUP);
+	case WM_RBUTTONDBLCLK: return std::format(L"WM_RBUTTONDBLCLK {:#08x}", WM_RBUTTONDBLCLK);
+	case WM_MBUTTONDOWN: return std::format(L"WM_MBUTTONDOWN {:#08x}", WM_MBUTTONDOWN);
+	case WM_MBUTTONUP: return std::format(L"WM_MBUTTONUP {:#08x}", WM_MBUTTONUP);
+	case WM_MBUTTONDBLCLK: return std::format(L"WM_MBUTTONDBLCLK {:#08x}", WM_MBUTTONDBLCLK);
+	case WM_MOUSEWHEEL: return std::format(L"WM_MOUSEWHEEL {:#08x}", WM_MOUSEWHEEL);
+	case WM_XBUTTONDOWN: return std::format(L"WM_XBUTTONDOWN {:#08x}", WM_XBUTTONDOWN);
+	case WM_XBUTTONUP: return std::format(L"WM_XBUTTONUP {:#08x}", WM_XBUTTONUP);
+	case WM_XBUTTONDBLCLK: return std::format(L"WM_XBUTTONDBLCLK {:#08x}", WM_XBUTTONDBLCLK);
+	case WM_PARENTNOTIFY: return std::format(L"WM_PARENTNOTIFY {:#08x}", WM_PARENTNOTIFY);
+	case WM_ENTERMENULOOP: return std::format(L"WM_ENTERMENULOOP {:#08x}", WM_ENTERMENULOOP);
+	case WM_EXITMENULOOP: return std::format(L"WM_EXITMENULOOP {:#08x}", WM_EXITMENULOOP);
+	case WM_NEXTMENU: return std::format(L"WM_NEXTMENU {:#08x}", WM_NEXTMENU);
+	case WM_SIZING: return std::format(L"WM_SIZING {:#08x}", WM_SIZING);
+	case WM_CAPTURECHANGED: return std::format(L"WM_CAPTURECHANGED {:#08x}", WM_CAPTURECHANGED);
+	case WM_MOVING: return std::format(L"WM_MOVING {:#08x}", WM_MOVING);
+	case WM_POWERBROADCAST: return std::format(L"WM_POWERBROADCAST {:#08x}", WM_POWERBROADCAST);
+	default:
+		return std::format(L"{:#08x}",msg);
+	}
 }
