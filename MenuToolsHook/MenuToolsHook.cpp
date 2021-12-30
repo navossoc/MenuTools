@@ -13,8 +13,11 @@
 #define WM_GETSYSMENU						0x313
 
 extern HINSTANCE hInst;
-POINT lastButtonDown = { 0 };
-WPARAM lastHitTest = 0;
+namespace {
+	POINT lastButtonDown = { 0 };
+	WPARAM lastHitTest = 0;
+	ScreenToolWnd::Ptr pWnd;
+}
 
 // Process messages
 LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -87,7 +90,6 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Title bar
 		if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
 		{
-			static ScreenToolWnd::Ptr pWnd;
 			pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, lParam);
 		}
 		return FALSE;
@@ -201,5 +203,27 @@ LRESULT CALLBACK GetMsgProc(
 	return CallNextHookEx(NULL, code, wParam, lParam);
 }
 
+// Keyboard messages
+LRESULT CALLBACK CallKeyboardMsg(
+	_In_  int code,
+	_In_  WPARAM wParam,
+	_In_  LPARAM lParam
+	)
+{
+	switch (code)
+	{
+	case HC_ACTION:
+	{
+		if (pWnd && wParam == VK_ESCAPE)
+		{
+			pWnd.reset();
+		}
+	}
+	}
+
+	return CallNextHookEx(NULL, code, wParam, lParam);
+}
+
 HOOKPROC hkCallWndProc = CallWndProc;
 HOOKPROC hkGetMsgProc = GetMsgProc;
+HOOKPROC hkCallKeyboardMsg = CallKeyboardMsg;

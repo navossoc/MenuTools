@@ -13,8 +13,10 @@ WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HHOOK hhkCallWndProc;
 HHOOK hhkGetMessage;
+HHOOK hhkCallKeyboardMsg;
 extern HOOKPROC hkCallWndProc;
 extern HOOKPROC hkGetMsgProc;
+extern HOOKPROC hkCallKeyboardMsg;
 
 
 // Forward declarations of functions included in this code module:
@@ -63,6 +65,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
+    hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, NULL, dwThreadId);
+    if (!hhkGetMessage)
+    {
+        return FALSE;
+    }
     MSG msg;
 
     // Main message loop:
