@@ -13,102 +13,27 @@
 #include <numeric>
 
 using namespace std::placeholders;
-std::wstring wm_to_wstring(UINT msg);
+using std::wstring;
+wstring wm_to_wstring(UINT msg);
 
+struct Screen
+{
+	int x, y, w, h; // left, top, width, height in pixels
+};
 
-enum class WinPos : unsigned char { HT, HB, HL, HR, /*TL, TR, BL, BR,*/ SC, BC };
+struct WinPos {
+	wstring n; // name
+	int x, y, w, h; // left, top, width, height in % from screen
+};
 
-//constexpr std::wostringstream& operator<<(std::wostringstream& os, WinPos wp)
-//{
-//	switch (wp)
-//	{
-//	case WinPos::HT:
-//		 os << L"HalfTop";
-//		 break;
-//	case WinPos::HB:
-//		os << L"HalfBottom";
-//		break;
-//	case WinPos::HL:
-//		os << L"HalfLeft";
-//		break;
-//	case WinPos::HR:
-//		os << L"HalfRight";
-//		break;
-//	case WinPos::TL:
-//		os << L"TopLeft";
-//		break;
-//	case WinPos::TR:
-//		os << L"TopRight";
-//		break;
-//	case WinPos::BL:
-//		os << L"BottomLeft";
-//		break;
-//	case WinPos::BR:
-//		os << L"BottomRight";
-//		break;
-//	case WinPos::SC:
-//		os << L"SmallCenter";
-//		break;
-//	case WinPos::BC:
-//		os << L"BigCenter";
-//		break;
-//	default:
-//		os << L"";
-//		break;
-//	}
-//	return os;
-//}
-
-//template <>
-//struct std::formatter<WinPos> : std::formatter<std::wstring> {
-//	auto format(WinPos wp, wformat_context& ctx) {
-//		std::wostringstream os;
-//		os << wp;
-//		return os.str();
-//	}
-//};
-
-//constexpr WinPos& operator ++(WinPos& wp)
-//{
-//	switch (wp)
-//	{
-//	case WinPos::HT:
-//		wp = WinPos::HB;
-//		break;
-//	case WinPos::HB:
-//		wp = WinPos::HL;
-//		break;
-//	case WinPos::HL:
-//		wp = WinPos::HR;
-//		break;
-//	case WinPos::HR:
-//		wp = WinPos::TL;
-//		break;
-//	case WinPos::TL:
-//		wp = WinPos::TR;
-//		break;
-//	case WinPos::TR:
-//		wp = WinPos::BL;
-//		break;
-//	case WinPos::BL:
-//		wp = WinPos::BR;
-//		break;
-//	case WinPos::BR:
-//		wp = WinPos::SC;
-//		break;
-//	default:
-//		wp = WinPos::HT;
-//		break;
-//	//case WinPos::SC:
-//	//	wp = WinPos::BC;
-//	//	break;
-//	//case WinPos::BC:
-//	//	wp = WinPos::SC;
-//	//	break;
-//	}
-//	return wp;
-//}
-
+WinPos winPositions[] = {
+	{ L"Small Center", 20, 20, 60, 60 },
+	{ L"Big Center", 5, 5, 90, 90 },
+	{ L"Top Left", 5, 5, 45, 45 },
+	{ L"Bottom Left", 5, 50, 45, 45 },
+	{ L"Top Right", 50, 5, 45, 45 },
+	{ L"Bottom Right", 50, 50, 45, 45 }
+};
 
 struct ScreenToolWnd::Impl
 {
@@ -116,8 +41,10 @@ struct ScreenToolWnd::Impl
 	~Impl();
 
 	HWND _hWnd;
-	std::vector<RECT> _bigScrRects, _smallScrRects, _bigPartRects, _smallPartRects;
+	std::vector<RECT> _realScrRects, _smallScrRects, _realPartRects, _smallPartRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+	RECT Calculate(WinPos& wp, Screen& s);
 
 	static std::map<HWND, ScreenToolWnd::Impl*> hWndToImplMap;
 	static LRESULT CALLBACK ToolWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -215,10 +142,10 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 				[&currentPart](RECT& r) {return EqualRect(&r, &currentPart); });
 			size_t i1 = std::distance(_smallPartRects.begin(), part_it);
 			size_t i2 = std::distance(_smallScrRects.begin(), scr_it);
-			if (i1 < _bigPartRects.size() && i2 < _bigScrRects.size()) 
+			if (i1 < _realPartRects.size() && i2 < _realScrRects.size()) 
 			{
-				RECT r = _bigPartRects[i1];
-				RECT scr = _bigScrRects[i2];
+				RECT r = _realPartRects[i1];
+				RECT scr = _realScrRects[i2];
 				//if (r.left == scr.left || r.top == scr.top || r.right == scr.right || r.bottom == scr.bottom) 
 				//{
 				//	LONG inflateX = ((scr.right - scr.left) / 100) * -2;
@@ -288,6 +215,18 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 }
 
 
+RECT ScreenToolWnd::Impl::Calculate(WinPos& wp, Screen& s)
+{
+	RECT r = { 
+		s.x + wp.x * (s.w / 100.0),
+		s.y + wp.y * (s.h / 100.0),
+	};
+	r.right = r.left + wp.w * (s.w / 100.0);
+	r.bottom = r.top + wp.h * (s.h / 100.0);
+	return r;
+}
+
+
 ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wParam, LPARAM lParam)
 	:_hWnd(nullptr)
 {
@@ -306,27 +245,27 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 
 	std::vector<RECT> mInfos;
 	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&mInfos);
-	_bigScrRects = mInfos;	
+	_realScrRects = mInfos;	
 
 	//RECT wa = { 0 };
 	//SystemParametersInfo(SPI_GETWORKAREA, 0, &wa, 0);
 
 	LONG ox = 0, oy = 0; // offset
 
-	for (RECT& sr : _bigScrRects) // screen rect
+	for (RECT& sr : _realScrRects) // screen rect
 	{
-		LONG F = 1;
-		sr.right = ((sr.right - sr.left) + sr.left) / F;
-		sr.bottom = ((sr.bottom - sr.top) + sr.top) / F;
-		sr.left = sr.left / F;
-		sr.top = sr.top / F;
+		//LONG F = 1;
+		//sr.right = ((sr.right - sr.left) + sr.left) / F;
+		//sr.bottom = ((sr.bottom - sr.top) + sr.top) / F;
+		//sr.left = sr.left / F;
+		//sr.top = sr.top / F;
 		ox = std::min(sr.left, ox);
 		oy = std::min(sr.top, oy);
 	}
 
 
 	RECT wr = { 0 }; // window rect
-	for (RECT& sr : _bigScrRects)
+	for (RECT& sr : _realScrRects)
 	{
 		OffsetRect(&sr, -ox, -oy);
 
@@ -337,135 +276,35 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	}
 
 
-	for (RECT& sr : _bigScrRects)
+	for (RECT& sr : _realScrRects)
 	{
-		LONG sw = (sr.right - sr.left); // screen width
-		LONG sh = (sr.bottom - sr.top); // screen height
-		LONG os = ((sr.right - sr.left) / 100) * 10; // offset
+		Screen s = {
+			sr.left,
+			sr.top,
+			sr.right - sr.left,
+			sr.bottom - sr.top
+		};
 
-		if (sw < sh)
-		{
-			// top
-			RECT top = { sr.left, sr.top, sr.left + sw, sr.bottom - sh / 2 };
-			//InflateRect(&top, 2, 2);
-			_bigPartRects.push_back(top);
-
-			// bottom
-			RECT bottom = { sr.left, sr.top + sh / 2, sr.left + sw, sr.bottom };
-			_bigPartRects.push_back(bottom);
+		for (WinPos& wp : winPositions) {
+			_realPartRects.push_back(Calculate(wp, s));
 		}
-		else
-		{
-			// left
-			RECT left = { sr.left, sr.top, sr.left + sw / 2, sr.bottom };
-			//InflateRect(&left, os, os);
-			_bigPartRects.push_back(left);
-
-			// right
-			RECT right = { sr.left + sw / 2, sr.top, sr.left + sr.left + sw, sr.bottom };
-			_bigPartRects.push_back(right);
-		}
-		/*
-		*/
-/*
-
-		// top left
-		RECT tl = { sr.left, sr.top, (sr.left + sw) / 2, (sr.top + sh) / 2};
-		//OffsetRect(&tl, os, os);
-		//InflateRect(&tl, inflate, inflate);
-		_bigPartRects.push_back(tl);
-
-		// top right
-		RECT tr = tl;
-		OffsetRect(&tr, sw / 2 , 0);
-		_bigPartRects.push_back(tr);
-
-		// bottom left
-		RECT bl = tl;
-		OffsetRect(&bl, 0, sh / 2);
-		_bigPartRects.push_back(bl);
-
-		// bottom right
-		RECT br = tl;
-		OffsetRect(&br, sw / 2, sh / 2);
-		_bigPartRects.push_back(br);
-*/
-		// small center
-		RECT sc = sr;
-		InflateRect(&sc, -(sw / 12), -(sh / 12));
-		//OffsetRect(&sc, ox, oy);
-		_bigPartRects.push_back(sc);
-
-		// big center
-		RECT bc = sr;
-		InflateRect(&bc, -(sw / 5), -(sh / 5));
-		_bigPartRects.push_back(bc);
 	}
 
 	_smallScrRects.clear();
-	std::ranges::transform(_bigScrRects, std::back_inserter(_smallScrRects),
+	std::ranges::transform(_realScrRects, std::back_inserter(_smallScrRects),
 		[](RECT& r) {return ScaleRect(r, F); });
 
 
 	_smallPartRects.clear();
-	std::ranges::transform(_bigPartRects, std::back_inserter(_smallPartRects),
+	std::ranges::transform(_realPartRects, std::back_inserter(_smallPartRects),
 		[](RECT& r) {return ScaleRect(r, F); });
 
-	LONG ib = 20;
-	LONG is = 8;
-	InflateRect(&_bigPartRects[(size_t)WinPos::HL], -ib, -ib);
-	OffsetRect(&_bigPartRects[(size_t)WinPos::HL], ib, 0);
-	InflateRect(&_smallPartRects[(size_t)WinPos::HL], -is / 2, 0);
-	OffsetRect(&_smallPartRects[(size_t)WinPos::HL], -ib /2, 0);
 
-	InflateRect(&_bigPartRects[(size_t)WinPos::HR], -ib, -ib);
-	OffsetRect(&_bigPartRects[(size_t)WinPos::HR], -ib, 0);
-	InflateRect(&_smallPartRects[(size_t)WinPos::HR], -is, 0 / 2);
-	OffsetRect(&_smallPartRects[(size_t)WinPos::HR], ib / 2, 0);
-
-	InflateRect(&_bigPartRects[(size_t)WinPos::HT], -ib, -ib);
-	OffsetRect(&_bigPartRects[(size_t)WinPos::HT], 0, ib);
-	InflateRect(&_smallPartRects[(size_t)WinPos::HT], 0, -is / 2);
-	OffsetRect(&_smallPartRects[(size_t)WinPos::HT], 0, -ib / 2);
-
-	InflateRect(&_bigPartRects[(size_t)WinPos::HB], -ib, -ib);
-	OffsetRect(&_bigPartRects[(size_t)WinPos::HB], 0, -ib);
-	InflateRect(&_smallPartRects[(size_t)WinPos::HB], 0, -is / 2);
-	OffsetRect(&_smallPartRects[(size_t)WinPos::HB], 0, ib / 2);
-	/*
-
-	InflateRect(&_bigPartRects[(size_t)WinPos::TL], -ib, -ib);
-	OffsetRect(&_bigPartRects[(size_t)WinPos::TL], ib, ib);
-	InflateRect(&_smallPartRects[(size_t)WinPos::TL], -is, -is);
-
-	InflateRect(&_bigPartRects[(size_t)WinPos::TR], -ib, -ib);
-	OffsetRect(&_bigPartRects[(size_t)WinPos::TR], -ib, ib);
-	InflateRect(&_smallPartRects[(size_t)WinPos::TR], -is, -is);
-
-	InflateRect(&_bigPartRects[(size_t)WinPos::BL], -ib, -ib);
-	OffsetRect(&_bigPartRects[(size_t)WinPos::BL], ib, -ib);
-	InflateRect(&_smallPartRects[(size_t)WinPos::BL], -is, -is);
-
-	InflateRect(&_bigPartRects[(size_t)WinPos::BR], -ib, -ib);
-	OffsetRect(&_bigPartRects[(size_t)WinPos::BR], -ib, -ib);
-	InflateRect(&_smallPartRects[(size_t)WinPos::BR], -is, -is);
-	*/
-
-	InflateRect(&_smallPartRects[(size_t)WinPos::SC], -is, -is);
-	InflateRect(&_smallPartRects[(size_t)WinPos::BC], -is, -is);
-
-	// after all calculations, reset the offset in case of more than one screen with differrent resolution 
-	for (RECT& bpr : _bigPartRects)
+	// after all calculations, reset the offset in case of more than one screen with different resolution 
+	for (RECT& bpr : _realPartRects)
 	{
 		OffsetRect(&bpr, ox, oy);
 	}
-
-	//for (WinPos wp = std::numeric_limits<WinPos>::min(); wp <= std::numeric_limits<WinPos>::max(); ++wp)
-	//{
-	//	std::wostringstream os;
-	//	os << wp;
-	//	OutputDebugString(std::format(L"{}\n", os.str()).c_str());
-	//}
 
 	wr = ScaleRect(wr, F);
 
@@ -506,6 +345,7 @@ ScreenToolWnd::Impl::~Impl()
 	//SendMessage(_hWnd, WM_CLOSE, 0, 0);
 	DestroyWindow(_hWnd);
 }
+
 
 std::wstring wm_to_wstring(UINT msg)
 {
