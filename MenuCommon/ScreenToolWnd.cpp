@@ -26,14 +26,6 @@ struct WinPos {
 	int x, y, w, h; // left, top, width, height in % from screen
 };
 
-WinPos winPositions[] = {
-	{ L"Small Center", 20, 20, 60, 60 },
-	{ L"Big Center", 5, 5, 90, 90 },
-	{ L"Top Left", 5, 5, 45, 45 },
-	{ L"Bottom Left", 5, 50, 45, 45 },
-	{ L"Top Right", 50, 5, 45, 45 },
-	{ L"Bottom Right", 50, 50, 45, 45 }
-};
 
 struct ScreenToolWnd::Impl
 {
@@ -275,6 +267,14 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		wr.bottom = std::max( sr.bottom, wr.bottom );
 	}
 
+	WinPos winPositions[] = {
+		{ L"Big Center", 7, 7, 90, 90 },
+		{ L"Small Center", 20, 20, 60, 60 },
+		{ L"Top Left", 3, 3, 45, 45 },
+		{ L"Bottom Left", 3, 52, 45, 45 },
+		{ L"Top Right", 52, 3, 45, 45 },
+		{ L"Bottom Right", 52, 52, 45, 45 }
+	};
 
 	for (RECT& sr : _realScrRects)
 	{
