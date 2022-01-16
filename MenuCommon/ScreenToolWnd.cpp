@@ -18,10 +18,12 @@ wstring wm_to_wstring(UINT msg);
 
 struct Screen
 {
+	int scr; // screen number
 	int x, y, w, h; // left, top, width, height in pixels
 };
 
 struct WinPos {
+	int scr; // screen 0 = all, 1 = first, 2 = second, ...
 	wstring n; // name
 	int x, y, w, h; // left, top, width, height in % from screen
 };
@@ -33,7 +35,7 @@ struct ScreenToolWnd::Impl
 	~Impl();
 
 	HWND _hWnd;
-	std::vector<RECT> _realScrRects, _smallScrRects, _realPartRects, _smallPartRects;
+	std::vector<RECT> _realScrRects, _previwScrRects, _realPosRects, _previewPosRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	RECT Calculate(WinPos& wp, Screen& s);
@@ -113,30 +115,30 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 	RECT currentPart = { 0 };
 	auto cp_it = std::ranges::find_if(
-		_smallPartRects.rbegin(), _smallPartRects.rend(),
+		_previewPosRects.rbegin(), _previewPosRects.rend(),
 		[&pt, ix, iy](RECT r) {
 			//InflateRect(&r, -ix * 4, -iy * 4);
 			return PtInRect(&r, pt); 
 		});
 
-	if (cp_it != _smallPartRects.rend())
+	if (cp_it != _previewPosRects.rend())
 		currentPart = *cp_it;
 
-	auto scr_it = std::ranges::find_if(_smallScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); });
+	auto scr_it = std::ranges::find_if(_previwScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); });
 
 	switch (message)
 	{
 	case WM_LBUTTONDOWN:
 	{
-		if (scr_it != _smallScrRects.end())
+		if (scr_it != _previwScrRects.end())
 		{
-			auto part_it = std::ranges::find_if(_smallPartRects,
+			auto part_it = std::ranges::find_if(_previewPosRects,
 				[&currentPart](RECT& r) {return EqualRect(&r, &currentPart); });
-			size_t i1 = std::distance(_smallPartRects.begin(), part_it);
-			size_t i2 = std::distance(_smallScrRects.begin(), scr_it);
-			if (i1 < _realPartRects.size() && i2 < _realScrRects.size()) 
+			size_t i1 = std::distance(_previewPosRects.begin(), part_it);
+			size_t i2 = std::distance(_previwScrRects.begin(), scr_it);
+			if (i1 < _realPosRects.size() && i2 < _realScrRects.size()) 
 			{
-				RECT r = _realPartRects[i1];
+				RECT r = _realPosRects[i1];
 				RECT scr = _realScrRects[i2];
 				//if (r.left == scr.left || r.top == scr.top || r.right == scr.right || r.bottom == scr.bottom) 
 				//{
@@ -156,7 +158,7 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 	case WM_MOUSEMOVE:
 	{
-		if(scr_it != _smallScrRects.end())
+		if(scr_it != _previwScrRects.end())
 			InvalidateRect(hWnd, &*scr_it, FALSE);
 		break;
 	}
@@ -168,14 +170,14 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		PAINTSTRUCT ps;
 		HDC hDC = BeginPaint(hWnd, &ps);
 
-		for (RECT sr : _smallScrRects) // screen rect		
+		for (RECT sr : _previwScrRects) // screen rect		
 		{
 			InflateRect(&sr, -ix, -iy);
 			FillRect(hDC, &sr, GetSysColorBrush(COLOR_ACTIVEBORDER));
 			FrameRect(hDC, &sr, GetSysColorBrush(COLOR_HOTLIGHT));			
 		}
 
-		for (RECT pr : _smallPartRects) // part rect	
+		for (RECT pr : _previewPosRects) // part rect	
 		{
 			//InflateRect(&pr, -ix * 4, -iy * 4);
 			FillRect(hDC, &pr, GetSysColorBrush(COLOR_INACTIVECAPTION));
@@ -237,6 +239,12 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 
 	std::vector<RECT> mInfos;
 	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&mInfos);
+	//for (RECT r : mInfos)
+	//{
+	//	_realScrRects.push_back(r);
+	//	OffsetRect(&r, r.right - r.left, 0);
+	//	_realScrRects.push_back(r);
+	//}
 	_realScrRects = mInfos;	
 
 	//RECT wa = { 0 };
@@ -268,17 +276,25 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	}
 
 	WinPos winPositions[] = {
-		{ L"Big Center", 7, 7, 90, 90 },
-		{ L"Small Center", 20, 20, 60, 60 },
-		{ L"Top Left", 3, 3, 45, 45 },
-		{ L"Bottom Left", 3, 52, 45, 45 },
-		{ L"Top Right", 52, 3, 45, 45 },
-		{ L"Bottom Right", 52, 52, 45, 45 }
+		{ 0, L"Big Center", 7, 7, 90, 90 },
+		{ 0, L"Small Center", 20, 20, 60, 60 },
+
+		{ 1, L"Left Half", 3, 3, 46, 94 },
+		{ 1, L"Right Half", 52, 3, 46, 94 },
+		{ 2, L"Top Half", 3, 3, 94, 46 },
+		{ 2, L"Bottom Half", 52, 3, 94, 46 },
+
+		{ 0, L"Top Left", 3, 3, 42, 42 },
+		{ 0, L"Bottom Left", 3, 56, 42, 42 },
+		{ 0, L"Top Right", 56, 3, 42, 42 },
+		{ 0, L"Bottom Right", 56, 56, 42, 42 }
 	};
 
-	for (RECT& sr : _realScrRects)
+	for (size_t i = 0; i < _realScrRects.size(); ++i)
 	{
+		RECT& sr = _realScrRects[i];
 		Screen s = {
+			i + 1,
 			sr.left,
 			sr.top,
 			sr.right - sr.left,
@@ -286,27 +302,31 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		};
 
 		for (WinPos& wp : winPositions) {
-			_realPartRects.push_back(Calculate(wp, s));
+			if (wp.scr > 0 && wp.scr != s.scr)
+				continue;
+
+			_realPosRects.push_back(Calculate(wp, s));
 		}
 	}
 
-	_smallScrRects.clear();
-	std::ranges::transform(_realScrRects, std::back_inserter(_smallScrRects),
+	_previwScrRects.clear();
+	_previewPosRects.clear();
+	std::ranges::transform(_realScrRects, std::back_inserter(_previwScrRects),
 		[](RECT& r) {return ScaleRect(r, F); });
 
-
-	_smallPartRects.clear();
-	std::ranges::transform(_realPartRects, std::back_inserter(_smallPartRects),
+	std::ranges::transform(_realPosRects, std::back_inserter(_previewPosRects),
 		[](RECT& r) {return ScaleRect(r, F); });
-
 
 	// after all calculations, reset the offset in case of more than one screen with different resolution 
-	for (RECT& bpr : _realPartRects)
+	for (RECT& bpr : _realPosRects)
 	{
 		OffsetRect(&bpr, ox, oy);
 	}
 
 	wr = ScaleRect(wr, F);
+	//wr.bottom += wr.bottom - wr.top;
+
+	//InflateRect(&wr, 0, wr.bottom - wr.top);
 
 	LONG w = (wr.right - wr.left) + GetSystemMetrics(SM_CXBORDER) * 2;
 	LONG h = (wr.bottom - wr.top) + GetSystemMetrics(SM_CYBORDER) * 2;

@@ -127,8 +127,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
+	RECT wa = { 0 };
+	SystemParametersInfo(SPI_GETWORKAREA, 0, &wa, 0);
+   int waw = wa.right - wa.left, wah = wa.bottom - wa.top;
+   int w = 600, h = 400;
+
    hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, CW_USEDEFAULT, 400, 200, nullptr, nullptr, hInstance, nullptr);
+      (waw - w) / 2, (wah - h) / 2, w, h, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
