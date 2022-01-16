@@ -11,6 +11,9 @@ public:
 	ScreenToolWnd();
 	~ScreenToolWnd();
 
+	//HWND GetHwnd();
+	//LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
 private:
 	struct Impl;
 	std::unique_ptr<Impl> _pImpl;

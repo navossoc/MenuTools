@@ -11,6 +11,7 @@
 #include <map>
 #include <limits>
 #include <numeric>
+#include <windowsx.h>
 
 using namespace std::placeholders;
 using std::wstring;
@@ -18,7 +19,7 @@ wstring wm_to_wstring(UINT msg);
 
 struct Screen
 {
-	int scr; // screen number
+	size_t scr; // screen number
 	int x, y, w, h; // left, top, width, height in pixels
 };
 
@@ -35,6 +36,7 @@ struct ScreenToolWnd::Impl
 	~Impl();
 
 	HWND _hWnd;
+	RECT _currentPreviewScr = {0}, _currentPreviewPos = {0};
 	std::vector<RECT> _realScrRects, _previwScrRects, _realPosRects, _previewPosRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -49,12 +51,23 @@ std::map<HWND, ScreenToolWnd::Impl*> ScreenToolWnd::Impl::hWndToImplMap;
 ScreenToolWnd::ScreenToolWnd() = default;
 ScreenToolWnd::~ScreenToolWnd() = default;
 
+//HWND ScreenToolWnd::GetHwnd()
+//{
+//	return this->_pImpl->_hWnd;
+//}
+//
+//LRESULT ScreenToolWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//	return _pImpl->WndProc(hWnd, message, wParam,lParam);
+//}
+
 ScreenToolWnd::Ptr ScreenToolWnd::ShowWindow(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	Ptr ptr = std::make_unique<ScreenToolWnd>();
 	ptr->_pImpl = std::make_unique<Impl>(hInst, hParent, message, wParam, lParam);
 	return ptr;
 }
+
 namespace
 {
 	const std::wstring CLASS_NAME = L"ScreenToolWnd";
@@ -113,43 +126,61 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
 	LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
 
-	RECT currentPart = { 0 };
-	auto cp_it = std::ranges::find_if(
-		_previewPosRects.rbegin(), _previewPosRects.rend(),
-		[&pt, ix, iy](RECT r) {
-			//InflateRect(&r, -ix * 4, -iy * 4);
-			return PtInRect(&r, pt); 
-		});
-
-	if (cp_it != _previewPosRects.rend())
-		currentPart = *cp_it;
-
-	auto scr_it = std::ranges::find_if(_previwScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); });
+	if (auto it = std::ranges::find_if(_previwScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); }); it != _previwScrRects.end())
+	{
+		if (!EqualRect(&*it, &_currentPreviewScr))
+			InvalidateRect(hWnd, &_currentPreviewScr, FALSE);
+		_currentPreviewScr = *it;
+		InvalidateRect(hWnd, &_currentPreviewScr, FALSE);
+	}
 
 	switch (message)
+	{	
+	case WM_MOUSEWHEEL:
 	{
+		//POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		//ScreenToClient(hWnd, &pt);
+
+		auto posRects = std::ranges::filter_view(_previewPosRects, [pt](RECT r) {
+				bool res = PtInRect(&r, pt);
+				return res;
+			});
+		for (RECT r : posRects)
+		{
+			OutputDebugString(std::format(L"PosRects: Left {}, Top {}, Right {}, Bottom {}\n", r.left, r.top, r.right, r.bottom).c_str());
+		}
+		if (auto it = std::ranges::find_if(posRects, [this](RECT& r) {
+				bool res = EqualRect(&_currentPreviewPos, &r);
+				return res;
+			}); it != posRects.end())
+		{
+			if (++it == posRects.end())
+				it = posRects.begin();
+			_currentPreviewPos = *it;
+			auto r = _currentPreviewPos;
+			OutputDebugString(std::format(L"MouseWheel, CurPos: Left {}, Top {}, Right {}, Bottom {}\n", r.left, r.top, r.right, r.bottom).c_str());
+		}
+		OutputDebugString(std::format(L"MouseWheel, Delta: {}, X: {}, Y: {}\n", GET_WHEEL_DELTA_WPARAM(wParam), pt.x, pt.y).c_str());
+		break;
+	}
+
 	case WM_LBUTTONDOWN:
 	{
-		if (scr_it != _previwScrRects.end())
+		if (auto scr_it = std::ranges::find_if(_previwScrRects, [this](RECT& r) { return EqualRect(&_currentPreviewScr, &r); }); scr_it != _previwScrRects.end())
 		{
-			auto part_it = std::ranges::find_if(_previewPosRects,
-				[&currentPart](RECT& r) {return EqualRect(&r, &currentPart); });
-			size_t i1 = std::distance(_previewPosRects.begin(), part_it);
-			size_t i2 = std::distance(_previwScrRects.begin(), scr_it);
-			if (i1 < _realPosRects.size() && i2 < _realScrRects.size()) 
+			if (auto pos_it = std::ranges::find_if(_previewPosRects, [this](RECT& r) {return EqualRect(&r, &_currentPreviewPos); }); pos_it != _previewPosRects.end())
 			{
-				RECT r = _realPosRects[i1];
-				RECT scr = _realScrRects[i2];
-				//if (r.left == scr.left || r.top == scr.top || r.right == scr.right || r.bottom == scr.bottom) 
-				//{
-				//	LONG inflateX = ((scr.right - scr.left) / 100) * -2;
-				//	LONG inflateY = ((scr.bottom - scr.top) / 100) * -2;
-				//	InflateRect(&r, inflateX, inflateY);
-				//}
-				HWND hParent = GetParent(hWnd);
-				SetWindowPos(hParent, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
-			}
+				size_t i1 = std::distance(_previewPosRects.begin(), pos_it);
+				size_t i2 = std::distance(_previwScrRects.begin(), scr_it);
+				if (i1 < _realPosRects.size() && i2 < _realScrRects.size()) 
+				{
+					RECT r = _realPosRects[i1];
+					RECT scr = _realScrRects[i2];
 
+					HWND hParent = GetParent(hWnd);
+					SetWindowPos(hParent, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+				}
+			}
 		}
 
 		DestroyWindow(hWnd);
@@ -158,8 +189,18 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 	case WM_MOUSEMOVE:
 	{
-		if(scr_it != _previwScrRects.end())
-			InvalidateRect(hWnd, &*scr_it, FALSE);
+		if (auto it = std::ranges::find_if(
+			_previewPosRects.rbegin(),
+			_previewPosRects.rend(),
+			[pt](RECT& r) {
+				bool res = PtInRect(&r, pt);
+				return res;
+			}); it != _previewPosRects.rend())
+		{
+			_currentPreviewPos = *it;
+			auto cp = _currentPreviewPos;
+			OutputDebugString(std::format(L"MouseMove, CurPos: Left {}, Top {}, Right {}, Bottom {}\n", cp.left, cp.top, cp.right, cp.bottom).c_str());
+		}
 		break;
 	}
 
@@ -187,8 +228,8 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			//DrawText(hDC, os.str().c_str(), -1, &pr, DT_LEFT | DT_TOP | DT_WORDBREAK);
 		}
 
-		FillRect(hDC, &currentPart, GetSysColorBrush(COLOR_ACTIVECAPTION));
-		FrameRect(hDC, &currentPart, GetSysColorBrush(COLOR_HOTLIGHT));
+		FillRect(hDC, &_currentPreviewPos, GetSysColorBrush(COLOR_ACTIVECAPTION));
+		FrameRect(hDC, &_currentPreviewPos, GetSysColorBrush(COLOR_HOTLIGHT));
 
 		EndPaint(hWnd, &ps);
 		break;
@@ -212,11 +253,11 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 RECT ScreenToolWnd::Impl::Calculate(WinPos& wp, Screen& s)
 {
 	RECT r = { 
-		s.x + wp.x * (s.w / 100.0),
-		s.y + wp.y * (s.h / 100.0),
+		static_cast<LONG>(s.x + wp.x * (s.w / 100.0)),
+		static_cast<LONG>(s.y + wp.y * (s.h / 100.0)),
 	};
-	r.right = r.left + wp.w * (s.w / 100.0);
-	r.bottom = r.top + wp.h * (s.h / 100.0);
+	r.right = static_cast<LONG>(r.left + wp.w * (s.w / 100.0));
+	r.bottom = static_cast<LONG>(r.top + wp.h * (s.h / 100.0));
 	return r;
 }
 
