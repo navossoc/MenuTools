@@ -218,6 +218,11 @@ LRESULT CALLBACK CallKeyboardMsg(
 		{
 			pWnd.reset();
 		}
+		if(pWnd)
+		{
+			BOOL upFlag = (HIWORD(lParam) & KF_UP) == KF_UP;  // transition-state flag, 1 on keyup
+			pWnd->WndProc(pWnd->GetHwnd(), upFlag ? WM_KEYUP:WM_KEYDOWN, wParam, lParam);
+		}
 	}
 	}
 

@@ -11,8 +11,8 @@ public:
 	ScreenToolWnd();
 	~ScreenToolWnd();
 
-	//HWND GetHwnd();
-	//LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	HWND GetHwnd();
+	LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
 	struct Impl;
