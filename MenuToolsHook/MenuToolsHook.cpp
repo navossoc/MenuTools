@@ -90,7 +90,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Title bar
 		if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
 		{
-			pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, lParam);
+			pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, MAKELPARAM(bu.x, bu.y));
 		}
 		return FALSE;
 		break;

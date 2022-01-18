@@ -41,6 +41,11 @@ BOOL MenuTools::Install(HWND hWnd)
 		InsertSubMenu(hMenuSystem, hMenuTransparency, SC_CLOSE, MF_BYCOMMAND | MF_POPUP, MT_MENU_TRANSPARENCY, _T("&Transparency"));
 	}
 
+	if (!IsMenuItem(hMenuSystem, MT_MENU_WIN_POS))
+	{
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_WIN_POS, _T("Open Positioning &Window"));
+	}
+
 	if (!IsMenuItem(hMenuSystem, MT_MENU_ALWAYS_ON_TOP))
 	{
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_ALWAYS_ON_TOP, _T("&Always on Top"));
@@ -72,6 +77,10 @@ BOOL MenuTools::Uninstall(HWND hWnd)
 		bSuccess = FALSE;
 	}
 	if (!DeleteMenu(hMenuSystem, MT_MENU_TRANSPARENCY, MF_BYCOMMAND))
+	{
+		bSuccess = FALSE;
+	}
+	if (!DeleteMenu(hMenuSystem, MT_MENU_WIN_POS, MF_BYCOMMAND))
 	{
 		bSuccess = FALSE;
 	}
@@ -312,7 +321,23 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 		return TRUE;
 	}
-		// Always On Top
+
+	case MT_MENU_WIN_POS:
+	{
+		RECT wr;
+		GetWindowRect(hWnd, &wr);
+		int caption = GetSystemMetrics(SM_CYCAPTION);
+		POINT pt = {
+			wr.left + ((wr.right - wr.left) / 2),
+			wr.top + (caption / 2)
+		};
+		PostMessage(hWnd, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
+		ScreenToClient(hWnd, &pt);
+		PostMessage(hWnd, WM_LBUTTONUP, 0, MAKELPARAM(pt.x, pt.y));
+		return TRUE;
+	}
+	
+	// Always On Top
 	case MT_MENU_ALWAYS_ON_TOP:
 	{
 		if (!(GetWindowLongPtr(hWnd, GWL_EXSTYLE) & WS_EX_TOPMOST))

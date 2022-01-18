@@ -36,6 +36,7 @@ struct ScreenToolWnd::Impl
 	~Impl();
 
 	HWND _hWnd;
+	POINT _clickPoint = { 0 };
 	RECT _currentPreviewScr = {0}, _currentPreviewPos = {0};
 	std::vector<RECT> _realScrRects, _previwScrRects, _realPosRects, _previewPosRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -141,10 +142,12 @@ inline It ScreenToolWnd::Impl::PreviousPos(It& it, Ct& posRects)
 
 LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	OutputDebugString(std::format(L"Message: {}\n", wm_to_wstring(message)).c_str());
+	wstring msg = wm_to_wstring(message);
+	if(!msg.empty())
+		OutputDebugString(std::format(L"Message: {}\n", msg).c_str());
 	LRESULT res = 0;
 
-	POINT pt;
+	POINT pt = { 0 };
 	GetCursorPos(&pt);
 	ScreenToClient(hWnd, &pt);
 
@@ -345,7 +348,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		wndClass = &wcl;
 		RegisterClassW(wndClass);
 	}
-
+	_clickPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 	std::vector<RECT> mInfos;
 	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&mInfos);
 	//for (RECT r : mInfos)
@@ -440,8 +443,8 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	LONG w = (wr.right - wr.left) + GetSystemMetrics(SM_CXBORDER) * 2;
 	LONG h = (wr.bottom - wr.top) + GetSystemMetrics(SM_CYBORDER) * 2;
 
-	POINT pt;
-	GetCursorPos(&pt);
+	POINT pt = _clickPoint;
+	//GetCursorPos(&pt);
 	OffsetRect(&wr, pt.x - (w / 2), pt.y + 10);
 
 	_hWnd = CreateWindowEx(
@@ -511,6 +514,7 @@ std::wstring wm_to_wstring(UINT msg)
 	case WM_MOVING: return std::format(L"WM_MOVING {:#08x}", WM_MOVING);
 	case WM_POWERBROADCAST: return std::format(L"WM_POWERBROADCAST {:#08x}", WM_POWERBROADCAST);
 	default:
-		return std::format(L"{:#08x}",msg);
+		return wstring();
+	//	return std::format(L"{:#08x}",msg);
 	}
 }
