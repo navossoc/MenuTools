@@ -124,7 +124,9 @@ RECT ScaleRect(RECT& in, FLOAT f)
 template<typename It, typename Ct>
 inline It ScreenToolWnd::Impl::NextPos(It& it, Ct& posRects)
 {
-	if (++it == posRects.end())
+	if (it == posRects.end())
+		it = posRects.begin();
+	else if (++it == posRects.end())
 		it = posRects.begin();
 	return it;
 }
@@ -134,7 +136,7 @@ inline It ScreenToolWnd::Impl::PreviousPos(It& it, Ct& posRects)
 {
 	if (it == posRects.begin())
 		it = --posRects.end();
-	if (--it == posRects.begin())
+	else if (--it == posRects.begin())
 		it = --posRects.end();
 	return it;
 }
@@ -157,9 +159,15 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	if (auto it = std::ranges::find_if(_previwScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); }); it != _previwScrRects.end())
 	{
 		if (!EqualRect(&*it, &_currentPreviewScr))
-			InvalidateRect(hWnd, &_currentPreviewScr, FALSE);
 		_currentPreviewScr = *it;
 		InvalidateRect(hWnd, &_currentPreviewScr, FALSE);
+	}
+	else
+	{
+		for(RECT& r : _previwScrRects)
+			InvalidateRect(hWnd, &r, FALSE);
+		if (!_previwScrRects.empty())
+			_currentPreviewScr = _previwScrRects.front();
 	}
 
 	switch (message)
@@ -284,6 +292,11 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 				else
 					it = PreviousPos(it, _previewPosRects);
 				_currentPreviewPos = *it;
+			}
+			else
+			{
+				if (!_previewPosRects.empty())
+					_currentPreviewPos = _previewPosRects.front();
 			}
 		}
 		else if (wParam == VK_RETURN)
