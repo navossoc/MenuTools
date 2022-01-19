@@ -1,9 +1,6 @@
 #include "stdafx.h"
 #include "ScreenToolWnd.h"
 
-#include <string>
-#include <format>
-#include <sstream>
 #include <vector>
 #include <ranges>
 #include <algorithm>
@@ -14,72 +11,6 @@
 #include <windowsx.h>
 
 using namespace std::placeholders;
-using std::wstring;
-wstring wm_to_wstring(UINT msg);
-
-/*
-template<typename T>
-bool is_one_of(T t)
-{
-	return false;
-}
-
-template<typename T, typename P1>
-bool is_one_of(T t, P1 p1)
-{
-	return t == p1;
-}
-
-template<typename... Px>
-bool is_one_of(Px... px) {
-	return is_one_of(Px...) || is_one_of(Px...);
-}
-*/
-template<typename T, typename P1>
-bool is_one_of(T t, P1 p1)
-{
-	return t == p1;
-}
-template<typename T, typename P1, typename P2>
-bool is_one_of(T t, P1 p1, P2 p2)
-{
-	return t == p1 || t == p2;
-}
-template<typename T, typename P1, typename P2, typename P3>
-bool is_one_of(T t, P1 p1, P2 p2, P3 p3)
-{
-	return t == p1 || t == p2 || t == p3;
-}
-template<typename T, typename P1, typename P2, typename P3, typename P4>
-bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4)
-{
-	return t == p1 || t == p2 || t == p3 || t == p4;
-}
-template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5>
-bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
-{
-	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5;
-}
-template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6>
-bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6)
-{
-	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6;
-}
-template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7>
-bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7)
-{
-	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6 || t == p7;
-}
-template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8>
-bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8)
-{
-	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6 || t == p7 || t == p8;
-}
-template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename P9>
-bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8, P9 p9)
-{
-	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6 || t == p7 || t == p8 || t == p9;
-}
 
 struct Screen
 {
@@ -106,9 +37,9 @@ struct ScreenToolWnd::Impl
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	
 	template<typename It, typename Ct>
-	inline It NextPos(It& it, Ct& posRects);
+	inline It NextPos(It it, Ct& posRects);
 	template<typename It, typename Ct>
-	inline It PreviousPos(It& it, Ct& posRects);
+	inline It PreviousPos(It it, Ct& posRects);
 
 	RECT Calculate(WinPos& wp, Screen& s);
 
@@ -186,7 +117,7 @@ RECT ScaleRect(RECT& in, FLOAT f)
 
 
 template<typename It, typename Ct>
-inline It ScreenToolWnd::Impl::NextPos(It& it, Ct& posRects)
+inline It ScreenToolWnd::Impl::NextPos(It it, Ct& posRects)
 {
 	if (it == posRects.end())
 		it = posRects.begin();
@@ -196,12 +127,12 @@ inline It ScreenToolWnd::Impl::NextPos(It& it, Ct& posRects)
 }
 
 template<typename It, typename Ct>
-inline It ScreenToolWnd::Impl::PreviousPos(It& it, Ct& posRects)
+inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct& posRects)
 {
 	if (it == posRects.begin())
-		it = --posRects.end();
+		it = (--posRects.end());
 	else if (--it == posRects.begin())
-		it = --posRects.end();
+		it = (--posRects.end());
 	return it;
 }
 
@@ -559,42 +490,4 @@ ScreenToolWnd::Impl::~Impl()
 }
 
 
-std::wstring wm_to_wstring(UINT msg)
-{
-	switch (msg)
-	{
-	case WM_CTLCOLORMSGBOX: return std::format(L"WM_CTLCOLORMSGBOX {:#08x}", WM_CTLCOLORMSGBOX);
-	case WM_CTLCOLOREDIT: return std::format(L"WM_CTLCOLOREDIT {:#08x}", WM_CTLCOLOREDIT);
-	case WM_CTLCOLORLISTBOX: return std::format(L"WM_CTLCOLORLISTBOX {:#08x}", WM_CTLCOLORLISTBOX);
-	case WM_CTLCOLORBTN: return std::format(L"WM_CTLCOLORBTN {:#08x}", WM_CTLCOLORBTN);
-	case WM_CTLCOLORDLG: return std::format(L"WM_CTLCOLORDLG {:#08x}", WM_CTLCOLORDLG);
-	case WM_CTLCOLORSCROLLBAR: return std::format(L"WM_CTLCOLORSCROLLBAR {:#08x}", WM_CTLCOLORSCROLLBAR);
-	case WM_CTLCOLORSTATIC: return std::format(L"WM_CTLCOLORSTATIC {:#08x}", WM_CTLCOLORSTATIC);
-	case MN_GETHMENU: return std::format(L"MN_GETHMENU {:#08x}", MN_GETHMENU);
-	case WM_MOUSEMOVE: return std::format(L"WM_MOUSEMOVE {:#08x}", WM_MOUSEMOVE);
-	case WM_LBUTTONDOWN: return std::format(L"WM_LBUTTONDOWN {:#08x}", WM_LBUTTONDOWN);
-	case WM_LBUTTONUP: return std::format(L"WM_LBUTTONUP {:#08x}", WM_LBUTTONUP);
-	case WM_LBUTTONDBLCLK: return std::format(L"WM_LBUTTONDBLCLK {:#08x}", WM_LBUTTONDBLCLK);
-	case WM_RBUTTONDOWN: return std::format(L"WM_RBUTTONDOWN {:#08x}", WM_RBUTTONDOWN);
-	case WM_RBUTTONUP: return std::format(L"WM_RBUTTONUP {:#08x}", WM_RBUTTONUP);
-	case WM_RBUTTONDBLCLK: return std::format(L"WM_RBUTTONDBLCLK {:#08x}", WM_RBUTTONDBLCLK);
-	case WM_MBUTTONDOWN: return std::format(L"WM_MBUTTONDOWN {:#08x}", WM_MBUTTONDOWN);
-	case WM_MBUTTONUP: return std::format(L"WM_MBUTTONUP {:#08x}", WM_MBUTTONUP);
-	case WM_MBUTTONDBLCLK: return std::format(L"WM_MBUTTONDBLCLK {:#08x}", WM_MBUTTONDBLCLK);
-	case WM_MOUSEWHEEL: return std::format(L"WM_MOUSEWHEEL {:#08x}", WM_MOUSEWHEEL);
-	case WM_XBUTTONDOWN: return std::format(L"WM_XBUTTONDOWN {:#08x}", WM_XBUTTONDOWN);
-	case WM_XBUTTONUP: return std::format(L"WM_XBUTTONUP {:#08x}", WM_XBUTTONUP);
-	case WM_XBUTTONDBLCLK: return std::format(L"WM_XBUTTONDBLCLK {:#08x}", WM_XBUTTONDBLCLK);
-	case WM_PARENTNOTIFY: return std::format(L"WM_PARENTNOTIFY {:#08x}", WM_PARENTNOTIFY);
-	case WM_ENTERMENULOOP: return std::format(L"WM_ENTERMENULOOP {:#08x}", WM_ENTERMENULOOP);
-	case WM_EXITMENULOOP: return std::format(L"WM_EXITMENULOOP {:#08x}", WM_EXITMENULOOP);
-	case WM_NEXTMENU: return std::format(L"WM_NEXTMENU {:#08x}", WM_NEXTMENU);
-	case WM_SIZING: return std::format(L"WM_SIZING {:#08x}", WM_SIZING);
-	case WM_CAPTURECHANGED: return std::format(L"WM_CAPTURECHANGED {:#08x}", WM_CAPTURECHANGED);
-	case WM_MOVING: return std::format(L"WM_MOVING {:#08x}", WM_MOVING);
-	case WM_POWERBROADCAST: return std::format(L"WM_POWERBROADCAST {:#08x}", WM_POWERBROADCAST);
-	default:
-		return wstring();
-	//	return std::format(L"{:#08x}",msg);
-	}
-}
+
