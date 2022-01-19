@@ -17,6 +17,70 @@ using namespace std::placeholders;
 using std::wstring;
 wstring wm_to_wstring(UINT msg);
 
+/*
+template<typename T>
+bool is_one_of(T t)
+{
+	return false;
+}
+
+template<typename T, typename P1>
+bool is_one_of(T t, P1 p1)
+{
+	return t == p1;
+}
+
+template<typename... Px>
+bool is_one_of(Px... px) {
+	return is_one_of(Px...) || is_one_of(Px...);
+}
+*/
+template<typename T, typename P1>
+bool is_one_of(T t, P1 p1)
+{
+	return t == p1;
+}
+template<typename T, typename P1, typename P2>
+bool is_one_of(T t, P1 p1, P2 p2)
+{
+	return t == p1 || t == p2;
+}
+template<typename T, typename P1, typename P2, typename P3>
+bool is_one_of(T t, P1 p1, P2 p2, P3 p3)
+{
+	return t == p1 || t == p2 || t == p3;
+}
+template<typename T, typename P1, typename P2, typename P3, typename P4>
+bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4)
+{
+	return t == p1 || t == p2 || t == p3 || t == p4;
+}
+template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5>
+bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
+{
+	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5;
+}
+template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6>
+bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6)
+{
+	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6;
+}
+template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7>
+bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7)
+{
+	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6 || t == p7;
+}
+template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8>
+bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8)
+{
+	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6 || t == p7 || t == p8;
+}
+template<typename T, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename P9>
+bool is_one_of(T t, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8, P9 p9)
+{
+	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6 || t == p7 || t == p8 || t == p9;
+}
+
 struct Screen
 {
 	size_t scr; // screen number
@@ -243,53 +307,23 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		break;
 	}
 
-	case WM_PAINT:
-	{
-		//InflateRect(&currentPart, -ix * 4, -iy * 4);
-
-		PAINTSTRUCT ps;
-		HDC hDC = BeginPaint(hWnd, &ps);
-
-		for (RECT sr : _previwScrRects) // screen rect		
-		{
-			InflateRect(&sr, -ix, -iy);
-			FillRect(hDC, &sr, GetSysColorBrush(COLOR_ACTIVEBORDER));
-			FrameRect(hDC, &sr, GetSysColorBrush(COLOR_HOTLIGHT));			
-		}
-
-		for (RECT pr : _previewPosRects) // part rect	
-		{
-			//InflateRect(&pr, -ix * 4, -iy * 4);
-			FillRect(hDC, &pr, GetSysColorBrush(COLOR_INACTIVECAPTION));
-			FrameRect(hDC, &pr, GetSysColorBrush(COLOR_HOTLIGHT));
-			//std::wostringstream os;
-			//os << L"x: " << pr.left << L" y: " << pr.top << L" w: " << pr.right - pr.left << L" h: " << pr.bottom - pr.top;
-			//DrawText(hDC, os.str().c_str(), -1, &pr, DT_LEFT | DT_TOP | DT_WORDBREAK);
-		}
-
-		FillRect(hDC, &_currentPreviewPos, GetSysColorBrush(COLOR_ACTIVECAPTION));
-		FrameRect(hDC, &_currentPreviewPos, GetSysColorBrush(COLOR_HOTLIGHT));
-
-		EndPaint(hWnd, &ps);
-		break;
-	}
-
 	case WM_KEYDOWN: 
+	{
 		if (wParam == VK_ESCAPE)
 		{
 			DestroyWindow(hWnd);
 			break;
 		}
-		else if (wParam == VK_DOWN || wParam == VK_UP)
+		else if (is_one_of(wParam, VK_DOWN, VK_RIGHT, VK_UP, VK_LEFT))
 		{
 			if (auto it = std::ranges::find_if(_previewPosRects, [this](RECT& r) {
 				bool res = EqualRect(&_currentPreviewPos, &r);
 				return res;
 				}); it != _previewPosRects.end())
 			{
-				if (wParam == VK_DOWN)
+				if (is_one_of(wParam, VK_DOWN, VK_RIGHT))
 					it = NextPos(it, _previewPosRects);
-				else
+				else //if (is_one_of(wParam, VK_UP, VK_LEFT))
 					it = PreviousPos(it, _previewPosRects);
 				_currentPreviewPos = *it;
 			}
@@ -328,6 +362,39 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		}
 		break;
 	}
+
+	case WM_PAINT:
+	{
+		//InflateRect(&currentPart, -ix * 4, -iy * 4);
+
+		PAINTSTRUCT ps;
+		HDC hDC = BeginPaint(hWnd, &ps);
+
+		for (RECT sr : _previwScrRects) // screen rect		
+		{
+			InflateRect(&sr, -ix, -iy);
+			FillRect(hDC, &sr, GetSysColorBrush(COLOR_ACTIVEBORDER));
+			FrameRect(hDC, &sr, GetSysColorBrush(COLOR_HOTLIGHT));			
+		}
+
+		for (RECT pr : _previewPosRects) // part rect	
+		{
+			//InflateRect(&pr, -ix * 4, -iy * 4);
+			FillRect(hDC, &pr, GetSysColorBrush(COLOR_INACTIVECAPTION));
+			FrameRect(hDC, &pr, GetSysColorBrush(COLOR_HOTLIGHT));
+			//std::wostringstream os;
+			//os << L"x: " << pr.left << L" y: " << pr.top << L" w: " << pr.right - pr.left << L" h: " << pr.bottom - pr.top;
+			//DrawText(hDC, os.str().c_str(), -1, &pr, DT_LEFT | DT_TOP | DT_WORDBREAK);
+		}
+
+		FillRect(hDC, &_currentPreviewPos, GetSysColorBrush(COLOR_ACTIVECAPTION));
+		FrameRect(hDC, &_currentPreviewPos, GetSysColorBrush(COLOR_HOTLIGHT));
+
+		EndPaint(hWnd, &ps);
+		break;
+	}
+
+	} // end switch
 
 	return  DefWindowProc(hWnd, message, wParam, lParam);
 }
