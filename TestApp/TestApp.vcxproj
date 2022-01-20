@@ -95,6 +95,7 @@
       <AdditionalIncludeDirectories>..;..\MenuTools;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -161,7 +162,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\MenuCommon\Defines.h" />
+    <ClInclude Include="..\MenuCommon\Logger.h" />
     <ClInclude Include="..\MenuCommon\ScreenToolWnd.h" />
+    <ClInclude Include="..\MenuCommon\TrayIcon.h" />
     <ClInclude Include="..\MenuToolsHook\MenuTools.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="stdafx.h" />
