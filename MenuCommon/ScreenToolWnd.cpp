@@ -12,6 +12,14 @@
 
 using namespace std::placeholders;
 
+namespace
+{
+	const std::wstring CLASS_NAME = L"ScreenToolWnd";
+	WNDCLASSW* wndClass = nullptr;
+
+	static const FLOAT F = 0.1f; // factor
+}
+
 struct Screen
 {
 	size_t scr; // screen number
@@ -69,14 +77,6 @@ ScreenToolWnd::Ptr ScreenToolWnd::ShowWindow(HINSTANCE hInst, HWND hParent, UINT
 	return ptr;
 }
 
-namespace
-{
-	const std::wstring CLASS_NAME = L"ScreenToolWnd";
-	WNDCLASSW* wndClass = nullptr;
-
-	static const FLOAT F = 0.1f; // factor
-}
-
 BOOL ScreenToolWnd::IsScreenToolWnd(HWND hWnd)
 {
 	static wchar_t className[100] = { L'\0' };
@@ -116,29 +116,158 @@ RECT ScaleRect(RECT& in, FLOAT f)
 }
 
 
-template<typename It, typename Ct>
-inline It ScreenToolWnd::Impl::NextPos(It it, Ct& posRects)
+ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wParam, LPARAM lParam)
+	:_hWnd(nullptr)
 {
-	if (it == posRects.end())
-		it = posRects.begin();
-	else if (++it == posRects.end())
-		it = posRects.begin();
-	return it;
+	if (wndClass == nullptr)
+	{
+		static WNDCLASSW wcl = { 0 };
+		wcl.hbrBackground = (HBRUSH)COLOR_WINDOW;
+		wcl.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wcl.hInstance = hInst;
+		wcl.lpszClassName = CLASS_NAME.c_str();
+		wcl.lpfnWndProc = ToolWndProc;
+
+		wndClass = &wcl;
+		RegisterClassW(wndClass);
+	}
+	_clickPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+	std::vector<RECT> mInfos;
+	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&mInfos);
+
+	_realScrRects = mInfos;	
+
+	LONG ox = 0, oy = 0; // offset
+
+	for (RECT& sr : _realScrRects) // screen rect
+	{
+		ox = std::min(sr.left, ox);
+		oy = std::min(sr.top, oy);
+	}
+
+
+	RECT wr = { 0 }; // window rect
+	for (RECT& sr : _realScrRects)
+	{
+		OffsetRect(&sr, -ox, -oy);
+
+		wr.left = std::min( sr.left, wr.left );
+		wr.top = std::min( sr.top, wr.top );
+		wr.right = std::max( sr.right, wr.right );
+		wr.bottom = std::max( sr.bottom, wr.bottom );
+	}
+
+	WinPos winPositions[] = {
+		{ 0, L"Big Center", 7, 7, 90, 90 },
+		{ 0, L"Small Center", 20, 20, 60, 60 },
+
+		{ 1, L"Left Half", 3, 3, 46, 94 },
+		{ 1, L"Right Half", 52, 3, 46, 94 },
+
+		//{ 2, L"Top Half", 3, 3, 94, 46 },
+		//{ 2, L"Bottom Half", 52, 3, 94, 46 },
+		{ 2, L"Right 1", 3, 3, 94, 14 },
+		{ 2, L"Right 2", 3, 19, 94, 14 },
+		{ 2, L"Right 3", 3, 35, 94, 14 },
+		{ 2, L"Right 4", 3, 51, 94, 14 },
+		{ 2, L"Right 5", 3, 67, 94, 14 },
+		{ 2, L"Right 6", 3, 83, 94, 14 },
+
+
+		{ 1, L"Top Left", 3, 3, 42, 42 },
+		{ 1, L"Bottom Left", 3, 56, 42, 42 },
+		{ 1, L"Top Right", 56, 3, 42, 42 },
+		{ 1, L"Bottom Right", 56, 56, 42, 42 }
+	};
+
+	for (size_t i = 0; i < _realScrRects.size(); ++i)
+	{
+		RECT& sr = _realScrRects[i];
+		Screen s = {
+			i + 1,
+			sr.left,
+			sr.top,
+			sr.right - sr.left,
+			sr.bottom - sr.top
+		};
+
+		for (WinPos& wp : winPositions) {
+			if (wp.scr > 0 && wp.scr != s.scr)
+				continue;
+
+			_realPosRects.push_back(Calculate(wp, s));
+		}
+	}
+
+	_previwScrRects.clear();
+	_previewPosRects.clear();
+	std::ranges::transform(_realScrRects, std::back_inserter(_previwScrRects),
+		[](RECT& r) {return ScaleRect(r, F); });
+
+	std::ranges::transform(_realPosRects, std::back_inserter(_previewPosRects),
+		[](RECT& r) {return ScaleRect(r, F); });
+
+	// after all calculations, reset the offset in case of more than one screen with different resolution 
+	for (RECT& bpr : _realPosRects)
+	{
+		OffsetRect(&bpr, ox, oy);
+	}
+
+	wr = ScaleRect(wr, F);
+
+	LONG w = (wr.right - wr.left) + GetSystemMetrics(SM_CXBORDER) * 2;
+	LONG h = (wr.bottom - wr.top) + GetSystemMetrics(SM_CYBORDER) * 2;
+
+	POINT pt = _clickPoint;
+
+	OffsetRect(&wr, pt.x - (w / 2), pt.y + 10);
+
+	{
+		using std::ranges::find_if;
+		RECT wr;
+		GetWindowRect(hParent, &wr);
+		if (auto it = find_if(_realPosRects, [&wr](RECT& r) {return EqualRect(&r, &wr); }); it != _realPosRects.end())
+		{
+			size_t i = std::distance(_realPosRects.begin(), it);
+			_currentPreviewPos = _previewPosRects[i];
+		}
+	}
+
+	_hWnd = CreateWindowEx(
+		WS_EX_TOPMOST, // | WS_EX_TOOLWINDOW,// Optional window styles.
+		CLASS_NAME.c_str(),                     // Window class
+		L"Pick a rectangle",    // Window text
+		WS_POPUP | WS_VISIBLE | WS_BORDER,           
+		//WS_OVERLAPPEDWINDOW, // Window style
+
+		// Size and position
+		//CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+		wr.left, wr.top, w, h,
+
+		hParent,       // Parent window    
+		NULL,       // Menu
+		hInst,     // Instance handle
+		NULL        // Additional application data
+	);
+	if (_hWnd)
+	{
+		hWndToImplMap[_hWnd] = this;
+		::ShowWindow(_hWnd, SW_SHOW);
+		//SetActiveWindow(_hWnd);
+	}
 }
 
-template<typename It, typename Ct>
-inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct& posRects)
+ScreenToolWnd::Impl::~Impl()
 {
-	if (it == posRects.begin())
-		it = (--posRects.end());
-	else if (--it == posRects.begin())
-		it = (--posRects.end());
-	return it;
+	hWndToImplMap.erase(_hWnd);
+	//SendMessage(_hWnd, WM_CLOSE, 0, 0);
+	DestroyWindow(_hWnd);
 }
-
 
 LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	using std::ranges::find_if;
+
 	wstring msg = wm_to_wstring(message);
 	if(!msg.empty())
 		OutputDebugString(std::format(L"Message: {}\n", msg).c_str());
@@ -151,7 +280,7 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
 	LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
 
-	if (auto it = std::ranges::find_if(_previwScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); }); it != _previwScrRects.end())
+	if (auto it = find_if(_previwScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); }); it != _previwScrRects.end())
 	{
 		if (!EqualRect(&*it, &_currentPreviewScr))
 		_currentPreviewScr = *it;
@@ -292,7 +421,8 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			MessageBox(NULL, strDataToSend, L"keyselected", MB_OK);
 		}
 		break;
-	}
+
+	} // end switch
 
 	case WM_PAINT:
 	{
@@ -332,6 +462,27 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 
 
+template<typename It, typename Ct>
+inline It ScreenToolWnd::Impl::NextPos(It it, Ct& posRects)
+{
+	if (it == posRects.end())
+		it = posRects.begin();
+	else if (++it == posRects.end())
+		it = posRects.begin();
+	return it;
+}
+
+template<typename It, typename Ct>
+inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct& posRects)
+{
+	if (it == posRects.begin())
+		it = (--posRects.end());
+	else if (--it == posRects.begin())
+		it = (--posRects.end());
+	return it;
+}
+
+
 RECT ScreenToolWnd::Impl::Calculate(WinPos& wp, Screen& s)
 {
 	RECT r = { 
@@ -342,152 +493,4 @@ RECT ScreenToolWnd::Impl::Calculate(WinPos& wp, Screen& s)
 	r.bottom = static_cast<LONG>(r.top + wp.h * (s.h / 100.0));
 	return r;
 }
-
-
-ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wParam, LPARAM lParam)
-	:_hWnd(nullptr)
-{
-	if (wndClass == nullptr)
-	{
-		static WNDCLASSW wcl = { 0 };
-		wcl.hbrBackground = (HBRUSH)COLOR_WINDOW;
-		wcl.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wcl.hInstance = hInst;
-		wcl.lpszClassName = CLASS_NAME.c_str();
-		wcl.lpfnWndProc = ToolWndProc;
-
-		wndClass = &wcl;
-		RegisterClassW(wndClass);
-	}
-	_clickPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-	std::vector<RECT> mInfos;
-	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&mInfos);
-	//for (RECT r : mInfos)
-	//{
-	//	_realScrRects.push_back(r);
-	//	OffsetRect(&r, r.right - r.left, 0);
-	//	_realScrRects.push_back(r);
-	//}
-	_realScrRects = mInfos;	
-
-	//RECT wa = { 0 };
-	//SystemParametersInfo(SPI_GETWORKAREA, 0, &wa, 0);
-
-	LONG ox = 0, oy = 0; // offset
-
-	for (RECT& sr : _realScrRects) // screen rect
-	{
-		//LONG F = 1;
-		//sr.right = ((sr.right - sr.left) + sr.left) / F;
-		//sr.bottom = ((sr.bottom - sr.top) + sr.top) / F;
-		//sr.left = sr.left / F;
-		//sr.top = sr.top / F;
-		ox = std::min(sr.left, ox);
-		oy = std::min(sr.top, oy);
-	}
-
-
-	RECT wr = { 0 }; // window rect
-	for (RECT& sr : _realScrRects)
-	{
-		OffsetRect(&sr, -ox, -oy);
-
-		wr.left = std::min( sr.left, wr.left );
-		wr.top = std::min( sr.top, wr.top );
-		wr.right = std::max( sr.right, wr.right );
-		wr.bottom = std::max( sr.bottom, wr.bottom );
-	}
-
-	WinPos winPositions[] = {
-		{ 0, L"Big Center", 7, 7, 90, 90 },
-		{ 0, L"Small Center", 20, 20, 60, 60 },
-
-		{ 1, L"Left Half", 3, 3, 46, 94 },
-		{ 1, L"Right Half", 52, 3, 46, 94 },
-		{ 2, L"Top Half", 3, 3, 94, 46 },
-		{ 2, L"Bottom Half", 52, 3, 94, 46 },
-
-		{ 0, L"Top Left", 3, 3, 42, 42 },
-		{ 0, L"Bottom Left", 3, 56, 42, 42 },
-		{ 0, L"Top Right", 56, 3, 42, 42 },
-		{ 0, L"Bottom Right", 56, 56, 42, 42 }
-	};
-
-	for (size_t i = 0; i < _realScrRects.size(); ++i)
-	{
-		RECT& sr = _realScrRects[i];
-		Screen s = {
-			i + 1,
-			sr.left,
-			sr.top,
-			sr.right - sr.left,
-			sr.bottom - sr.top
-		};
-
-		for (WinPos& wp : winPositions) {
-			if (wp.scr > 0 && wp.scr != s.scr)
-				continue;
-
-			_realPosRects.push_back(Calculate(wp, s));
-		}
-	}
-
-	_previwScrRects.clear();
-	_previewPosRects.clear();
-	std::ranges::transform(_realScrRects, std::back_inserter(_previwScrRects),
-		[](RECT& r) {return ScaleRect(r, F); });
-
-	std::ranges::transform(_realPosRects, std::back_inserter(_previewPosRects),
-		[](RECT& r) {return ScaleRect(r, F); });
-
-	// after all calculations, reset the offset in case of more than one screen with different resolution 
-	for (RECT& bpr : _realPosRects)
-	{
-		OffsetRect(&bpr, ox, oy);
-	}
-
-	wr = ScaleRect(wr, F);
-	//wr.bottom += wr.bottom - wr.top;
-
-	//InflateRect(&wr, 0, wr.bottom - wr.top);
-
-	LONG w = (wr.right - wr.left) + GetSystemMetrics(SM_CXBORDER) * 2;
-	LONG h = (wr.bottom - wr.top) + GetSystemMetrics(SM_CYBORDER) * 2;
-
-	POINT pt = _clickPoint;
-	//GetCursorPos(&pt);
-	OffsetRect(&wr, pt.x - (w / 2), pt.y + 10);
-
-	_hWnd = CreateWindowEx(
-		WS_EX_TOPMOST, // | WS_EX_TOOLWINDOW,// Optional window styles.
-		CLASS_NAME.c_str(),                     // Window class
-		L"Pick a rectangle",    // Window text
-		WS_POPUP | WS_VISIBLE | WS_BORDER,           
-		//WS_OVERLAPPEDWINDOW, // Window style
-
-		// Size and position
-		//CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-		wr.left, wr.top, w, h,
-
-		hParent,       // Parent window    
-		NULL,       // Menu
-		hInst,     // Instance handle
-		NULL        // Additional application data
-	);
-	if (_hWnd)
-	{
-		hWndToImplMap[_hWnd] = this;
-		::ShowWindow(_hWnd, SW_SHOW);
-		//SetActiveWindow(_hWnd);
-	}
-}
-
-ScreenToolWnd::Impl::~Impl()
-{
-	hWndToImplMap.erase(_hWnd);
-	//SendMessage(_hWnd, WM_CLOSE, 0, 0);
-	DestroyWindow(_hWnd);
-}
-
-
 

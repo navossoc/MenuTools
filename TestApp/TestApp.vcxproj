@@ -162,7 +162,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\MenuCommon\Defines.h" />
+    <ClInclude Include="..\MenuCommon\Logger.h" />
     <ClInclude Include="..\MenuCommon\ScreenToolWnd.h" />
+    <ClInclude Include="..\MenuCommon\TrayIcon.h" />
     <ClInclude Include="..\MenuToolsHook\MenuTools.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="stdafx.h" />
