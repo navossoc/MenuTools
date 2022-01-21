@@ -43,7 +43,7 @@ BOOL MenuTools::Install(HWND hWnd)
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_WIN_POS))
 	{
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_WIN_POS, _T("Open Positioning &Window"));
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_WIN_POS, _T("Open P&ositioning Window"));
 	}
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_ALWAYS_ON_TOP))
