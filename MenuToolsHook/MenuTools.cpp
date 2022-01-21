@@ -399,8 +399,11 @@ BOOL InsertSubMenu(HMENU hMenu, HMENU hSubMenu, UINT uPosition, UINT uFlags, UIN
 		mmi.cbSize = sizeof(MENUITEMINFO);
 		mmi.fMask = MIIM_ID;
 		mmi.wID = uIDNewItem;
-
+#ifdef _WIN64
 		return SetMenuItemInfo(hMenu, TODWORD(hSubMenu), FALSE, &mmi);
+#else
+		return SetMenuItemInfo(hMenu, (UINT)hSubMenu, FALSE, &mmi);
+#endif
 	}
 
 	return FALSE;

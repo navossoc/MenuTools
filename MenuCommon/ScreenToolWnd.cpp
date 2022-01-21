@@ -133,7 +133,9 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	}
 	_clickPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 	std::vector<RECT> mInfos;
+#ifdef _WIN64
 	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&mInfos);
+#endif
 
 	_realScrRects = mInfos;	
 
