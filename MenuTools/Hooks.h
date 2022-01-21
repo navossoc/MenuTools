@@ -12,4 +12,5 @@ public:
 protected:
 	HHOOK hhkCallWndProc;
 	HHOOK hhkGetMessage;
+	HHOOK hhkCallKeyboardMsg;
 };

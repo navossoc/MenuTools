@@ -27,6 +27,7 @@ using std::wstring;
 // Hook
 #define MT_HOOK_PROC_CWP					"CallWndProc"
 #define MT_HOOK_PROC_GMP					"GetMsgProc"
+#define MT_HOOK_PROC_KYB					"CallKeyboardMsg"
 
 // Hook -> Messages
 #define MT_HOOK_MSG_QUIT					RegisterWindowMessage(_T("MenuToolsQuit"))

@@ -4,6 +4,7 @@
 Hooks::Hooks()
 	: hhkCallWndProc(NULL)
 	, hhkGetMessage(NULL)
+	, hhkCallKeyboardMsg(NULL)
 {
 	//
 }
@@ -36,6 +37,14 @@ BOOL Hooks::Install()
 		return FALSE;
 	}
 
+
+	// GetKeyboardProc function
+	HOOKPROC hkCallKeyboardMsg = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_KYB);
+	if (!hkCallKeyboardMsg)
+	{
+		return FALSE;
+	}
+
 	// Set hook on CallWndProc
 	hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, hModDLL, NULL);
 	if (!hhkCallWndProc)
@@ -46,6 +55,13 @@ BOOL Hooks::Install()
 	// Set hook on GetMessage
 	hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, hModDLL, NULL);
 	if (!hhkGetMessage)
+	{
+		return FALSE;
+	}
+
+	// Set hook on Keyboard
+	hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, hModDLL, NULL);
+	if (!hhkCallKeyboardMsg)
 	{
 		return FALSE;
 	}
@@ -68,6 +84,12 @@ BOOL Hooks::Uninstall()
 
 	// Unset the GetMessage
 	if (!UnhookWindowsHookEx(hhkGetMessage))
+	{
+		bRetn = FALSE;
+	}
+
+	// SUnset hook on Keyboard
+	if (!UnhookWindowsHookEx(hhkCallKeyboardMsg))
 	{
 		bRetn = FALSE;
 	}

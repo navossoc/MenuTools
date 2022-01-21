@@ -50,26 +50,76 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_TESTAPP));
 
-    DWORD dwThreadId = ::GetCurrentThreadId();
+	 HMODULE hModDLL = LoadLibrary(BUILD(MT_DLL_NAME));
+	 if (!hModDLL)
+	 {
+		 return FALSE;
+	 }
 
-    hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, NULL, dwThreadId);
-    if (!hhkCallWndProc)
-    {
-        return FALSE;
-    }
+	 // CallWndProc function
+	 HOOKPROC hkCallWndProc = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_CWP);
+	 if (!hkCallWndProc)
+	 {
+		 return FALSE;
+	 }
 
-    // Set hook on GetMessage
-    hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, NULL, dwThreadId);
-    if (!hhkGetMessage)
-    {
-        return FALSE;
-    }
+	 // GetMsgProc function
+	 HOOKPROC hkGetMsgProc = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_GMP);
+	 if (!hkGetMsgProc)
+	 {
+		 return FALSE;
+	 }
 
-    hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, NULL, dwThreadId);
-    if (!hhkGetMessage)
-    {
-        return FALSE;
-    }
+
+	 // GetKeyboardProc function
+	 HOOKPROC hkCallKeyboardMsg = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_KYB);
+	 if (!hkCallKeyboardMsg)
+	 {
+		 return FALSE;
+	 }
+
+	 // Set hook on CallWndProc
+	 hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, hModDLL, NULL);
+	 if (!hhkCallWndProc)
+	 {
+		 return FALSE;
+	 }
+
+	 // Set hook on GetMessage
+	 hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, hModDLL, NULL);
+	 if (!hhkGetMessage)
+	 {
+		 return FALSE;
+	 }
+
+	 // Set hook on Keyboard
+	 hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, hModDLL, NULL);
+	 if (!hhkCallKeyboardMsg)
+	 {
+		 return FALSE;
+	 }
+
+    //DWORD dwThreadId = ::GetCurrentThreadId();
+
+    //hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, NULL, dwThreadId);
+    //if (!hhkCallWndProc)
+    //{
+    //    return FALSE;
+    //}
+
+    //// Set hook on GetMessage
+    //hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, NULL, dwThreadId);
+    //if (!hhkGetMessage)
+    //{
+    //    return FALSE;
+    //}
+
+    //hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, NULL, dwThreadId);
+    //if (!hhkGetMessage)
+    //{
+    //    return FALSE;
+    //}
+
     MSG msg;
 
     // Main message loop:

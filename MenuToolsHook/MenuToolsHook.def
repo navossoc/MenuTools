@@ -2,3 +2,4 @@ LIBRARY MenuToolsHook
 EXPORTS
 	CallWndProc
 	GetMsgProc
+	CallKeyboardMsg
