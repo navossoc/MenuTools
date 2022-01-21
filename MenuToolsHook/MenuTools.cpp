@@ -2,6 +2,7 @@
 #include "MenuTools.h"
 
 #include "MenuCommon/TrayIcon.h"
+#include <MenuCommon/ScreenToolWnd.h>
 
 // Window information
 LONG wndOldWidth = -1;
@@ -16,6 +17,16 @@ BOOL MenuTools::Install(HWND hWnd)
 	}
 
 	HMENU hMenuSystem = GetSystemMenu(hWnd, FALSE);
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_OPEN_WIN_POS))
+	{
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_OPEN_WIN_POS, _T("Open P&ositioning-Window"));
+	}
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_CLOSE_WIN_POS))
+	{
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_CLOSE_WIN_POS, _T("&Close Positioning-Window"));
+	}
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_PRIORITY))
 	{
@@ -39,11 +50,6 @@ BOOL MenuTools::Install(HWND hWnd)
 		AppendMenu(hMenuTransparency, MF_BYCOMMAND | MF_ENABLED | MF_STRING, MT_MENU_TRANSPARENCY_40, _T("&40%"));
 		AppendMenu(hMenuTransparency, MF_BYCOMMAND | MF_ENABLED | MF_STRING, MT_MENU_TRANSPARENCY_50, _T("&50%"));
 		InsertSubMenu(hMenuSystem, hMenuTransparency, SC_CLOSE, MF_BYCOMMAND | MF_POPUP, MT_MENU_TRANSPARENCY, _T("&Transparency"));
-	}
-
-	if (!IsMenuItem(hMenuSystem, MT_MENU_WIN_POS))
-	{
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_WIN_POS, _T("Open P&ositioning Window"));
 	}
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_ALWAYS_ON_TOP))
@@ -80,7 +86,11 @@ BOOL MenuTools::Uninstall(HWND hWnd)
 	{
 		bSuccess = FALSE;
 	}
-	if (!DeleteMenu(hMenuSystem, MT_MENU_WIN_POS, MF_BYCOMMAND))
+	if (!DeleteMenu(hMenuSystem, MT_MENU_OPEN_WIN_POS, MF_BYCOMMAND))
+	{
+		bSuccess = FALSE;
+	}
+	if (!DeleteMenu(hMenuSystem, MT_MENU_CLOSE_WIN_POS, MF_BYCOMMAND))
 	{
 		bSuccess = FALSE;
 	}
@@ -322,7 +332,7 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 	}
 
-	case MT_MENU_WIN_POS:
+	case MT_MENU_OPEN_WIN_POS:
 	{
 		RECT wr;
 		GetWindowRect(hWnd, &wr);
@@ -337,6 +347,13 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 	}
 	
+
+	case MT_MENU_CLOSE_WIN_POS:
+	{
+		ScreenToolWnd::pWnd.reset();
+		return TRUE;
+	}
+
 	// Always On Top
 	case MT_MENU_ALWAYS_ON_TOP:
 	{

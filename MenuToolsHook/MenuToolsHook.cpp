@@ -16,7 +16,7 @@ extern HINSTANCE hInst;
 namespace {
 	POINT lastButtonDown = { 0 };
 	WPARAM lastHitTest = 0;
-	ScreenToolWnd::Ptr pWnd;
+	//ScreenToolWnd::Ptr pWnd;
 }
 
 // Process messages
@@ -90,7 +90,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Title bar
 		if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
 		{
-			pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, MAKELPARAM(bu.x, bu.y));
+			ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, MAKELPARAM(bu.x, bu.y));
 		}
 		return FALSE;
 		break;
@@ -214,14 +214,14 @@ LRESULT CALLBACK CallKeyboardMsg(
 	{
 	case HC_ACTION:
 	{
-		if (pWnd && wParam == VK_ESCAPE)
+		if (ScreenToolWnd::pWnd && wParam == VK_ESCAPE)
 		{
-			pWnd.reset();
+			ScreenToolWnd::pWnd.reset();
 		}
-		if(pWnd)
+		if(ScreenToolWnd::pWnd)
 		{
 			BOOL upFlag = (HIWORD(lParam) & KF_UP) == KF_UP;  // transition-state flag, 1 on keyup
-			pWnd->WndProc(pWnd->GetHwnd(), upFlag ? WM_KEYUP:WM_KEYDOWN, wParam, lParam);
+			ScreenToolWnd::pWnd->WndProc(ScreenToolWnd::pWnd->GetHwnd(), upFlag ? WM_KEYUP:WM_KEYDOWN, wParam, lParam);
 		}
 	}
 	}

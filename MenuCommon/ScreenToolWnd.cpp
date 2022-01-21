@@ -77,6 +77,8 @@ ScreenToolWnd::Ptr ScreenToolWnd::ShowWindow(HINSTANCE hInst, HWND hParent, UINT
 	return ptr;
 }
 
+ScreenToolWnd::Ptr ScreenToolWnd::pWnd;
+
 BOOL ScreenToolWnd::IsScreenToolWnd(HWND hWnd)
 {
 	static wchar_t className[100] = { L'\0' };
@@ -255,15 +257,21 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	{
 		hWndToImplMap[_hWnd] = this;
 		::ShowWindow(_hWnd, SW_SHOW);
+		::SetFocus(_hWnd);
 		//SetActiveWindow(_hWnd);
 	}
 }
 
+extern HINSTANCE hInst;  // current instance
+
 ScreenToolWnd::Impl::~Impl()
 {
-	hWndToImplMap.erase(_hWnd);
-	//SendMessage(_hWnd, WM_CLOSE, 0, 0);
-	DestroyWindow(_hWnd);
+	if (hInst) {
+		hWndToImplMap.erase(_hWnd);
+		//SendMessage(_hWnd, WM_CLOSE, 0, 0);
+		if(IsWindow(_hWnd))
+			DestroyWindow(_hWnd);
+	}
 }
 
 LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
