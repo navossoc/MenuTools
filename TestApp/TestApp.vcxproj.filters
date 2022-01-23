@@ -33,6 +33,15 @@
     <ClInclude Include="..\MenuToolsHook\MenuTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\MenuCommon\ScreenToolWnd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MenuCommon\Logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MenuCommon\TrayIcon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TestApp.cpp">
@@ -48,6 +57,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\MenuCommon\TrayIcon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MenuCommon\ScreenToolWnd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

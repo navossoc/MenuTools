@@ -2,11 +2,22 @@
 //
 
 #include "stdafx.h"
-#include "MenuTools.h"
 
+#include <windowsx.h>
+#include <sstream>
+
+#include "MenuTools.h"
 #include "MenuCommon/TrayIcon.h"
+#include <MenuCommon/ScreenToolWnd.h>
 
 #define WM_GETSYSMENU						0x313
+
+extern HINSTANCE hInst;
+namespace {
+	POINT lastButtonDown = { 0 };
+	WPARAM lastHitTest = 0;
+	//ScreenToolWnd::Ptr pWnd;
+}
 
 // Process messages
 LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -42,9 +53,51 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 		break;
 	}
-		// Roll-up/Unroll (hard coded for now)
-	case WM_NCRBUTTONUP:
-	{
+	case WM_NCLBUTTONDOWN: {
+		if (wParam == HTCAPTION) 
+		{
+			lastButtonDown = {
+				GET_X_LPARAM(lParam),
+				GET_Y_LPARAM(lParam)
+			};
+			std::wostringstream os;
+			os << L"Button Down: " << lastButtonDown.x << L", " << lastButtonDown.y << std::endl;
+			OutputDebugString(os.str().c_str());
+		}
+		else
+		{
+			lastButtonDown = { 0, 0 };
+		}
+		return TRUE;
+		break;
+	}
+
+	case WM_LBUTTONUP: {
+		POINT& lbd = lastButtonDown;
+		POINT bu = {
+			GET_X_LPARAM(lParam),
+			GET_Y_LPARAM(lParam)
+		};
+		ClientToScreen(hWnd, &bu);
+		std::wostringstream os;
+		os << L"Button Up: " << bu.x << L", " << bu.y << std::endl;
+		OutputDebugString(os.str().c_str());
+		if (std::abs(lbd.x - bu.x) > 2 || std::abs(lbd.y - bu.y) > 2)
+			return FALSE;
+
+		wParam = SendMessage(hWnd, WM_NCHITTEST, wParam, lParam);
+
+		// Title bar
+		if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
+		{
+			ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, MAKELPARAM(bu.x, bu.y));
+		}
+		return FALSE;
+		break;
+	}
+
+	// Roll-up/Unroll (hard coded for now)
+	case WM_NCRBUTTONUP:{
 		// Title bar
 		if (wParam == HTCAPTION)
 		{
@@ -150,5 +203,32 @@ LRESULT CALLBACK GetMsgProc(
 	return CallNextHookEx(NULL, code, wParam, lParam);
 }
 
+// Keyboard messages
+LRESULT CALLBACK CallKeyboardMsg(
+	_In_  int code,
+	_In_  WPARAM wParam,
+	_In_  LPARAM lParam
+	)
+{
+	switch (code)
+	{
+	case HC_ACTION:
+	{
+		if (ScreenToolWnd::pWnd && wParam == VK_ESCAPE)
+		{
+			ScreenToolWnd::pWnd.reset();
+		}
+		if(ScreenToolWnd::pWnd)
+		{
+			BOOL upFlag = (HIWORD(lParam) & KF_UP) == KF_UP;  // transition-state flag, 1 on keyup
+			ScreenToolWnd::pWnd->WndProc(ScreenToolWnd::pWnd->GetHwnd(), upFlag ? WM_KEYUP:WM_KEYDOWN, wParam, lParam);
+		}
+	}
+	}
+
+	return CallNextHookEx(NULL, code, wParam, lParam);
+}
+
 HOOKPROC hkCallWndProc = CallWndProc;
 HOOKPROC hkGetMsgProc = GetMsgProc;
+HOOKPROC hkCallKeyboardMsg = CallKeyboardMsg;

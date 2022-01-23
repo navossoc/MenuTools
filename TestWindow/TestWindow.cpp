@@ -1,30 +1,22 @@
-// TestApp.cpp : Defines the entry point for the application.
+// TestWindow.cpp : Defines the entry point for the application.
 //
 
-#include "stdafx.h"
-#include "TestApp.h"
+#include "framework.h"
+#include "TestWindow.h"
+//#include "../MenuCommon/Defines.h"
 
 #define MAX_LOADSTRING 100
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
-HWND hWnd;										// current window handle
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-HHOOK hhkCallWndProc;
-HHOOK hhkGetMessage;
-HHOOK hhkCallKeyboardMsg;
-extern HOOKPROC hkCallWndProc;
-extern HOOKPROC hkGetMsgProc;
-extern HOOKPROC hkCallKeyboardMsg;
-
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    DoIt(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -38,9 +30,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_TESTAPP, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_TESTWINDOW, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
-
 
     // Perform application initialization:
     if (!InitInstance (hInstance, nCmdShow))
@@ -48,80 +39,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_TESTAPP));
-
-    /*
-	 HMODULE hModDLL = LoadLibrary(BUILD(MT_DLL_NAME));
-	 if (!hModDLL)
-	 {
-		 return FALSE;
-	 }
-
-	 // CallWndProc function
-	 HOOKPROC hkCallWndProc = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_CWP);
-	 if (!hkCallWndProc)
-	 {
-		 return FALSE;
-	 }
-
-	 // GetMsgProc function
-	 HOOKPROC hkGetMsgProc = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_GMP);
-	 if (!hkGetMsgProc)
-	 {
-		 return FALSE;
-	 }
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_TESTWINDOW));
 
 
-	 // GetKeyboardProc function
-	 HOOKPROC hkCallKeyboardMsg = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_KYB);
-	 if (!hkCallKeyboardMsg)
-	 {
-		 return FALSE;
-	 }
-
-	 // Set hook on CallWndProc
-	 hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, hModDLL, NULL);
-	 if (!hhkCallWndProc)
-	 {
-		 return FALSE;
-	 }
-
-	 // Set hook on GetMessage
-	 hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, hModDLL, NULL);
-	 if (!hhkGetMessage)
-	 {
-		 return FALSE;
-	 }
-
-	 // Set hook on Keyboard
-	 hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, hModDLL, NULL);
-	 if (!hhkCallKeyboardMsg)
-	 {
-		 return FALSE;
-	 }
-   */
-    DWORD dwThreadId = ::GetCurrentThreadId();
-
-	 // Set hook on CallWndProc
-    hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, NULL, dwThreadId);
-    if (!hhkCallWndProc)
-    {
-        return FALSE;
-    }
-
-    // Set hook on GetMessage
-    hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, NULL, dwThreadId);
-    if (!hhkGetMessage)
-    {
-        return FALSE;
-    }
-
-	 // Set hook on Keyboard
-    hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, NULL, dwThreadId);
-    if (!hhkGetMessage)
-    {
-        return FALSE;
-    }
 
     MSG msg;
 
@@ -147,7 +67,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 //
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
-    WNDCLASSEXW wcex = {};
+    WNDCLASSEXW wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
@@ -156,10 +76,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TESTAPP));
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TESTWINDOW));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_TESTAPP);
+    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_TESTWINDOW);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -182,11 +102,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	RECT wa = { 0 };
 	SystemParametersInfo(SPI_GETWORKAREA, 0, &wa, 0);
-   int waw = wa.right - wa.left, wah = wa.bottom - wa.top;
-   int w = 600, h = 400;
+	int waw = wa.right - wa.left, wah = wa.bottom - wa.top;
+	int w = 600, h = 400;
 
-   hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      (waw - w) / 2, (wah - h) / 2, w, h, nullptr, nullptr, hInstance, nullptr);
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+		(waw - w) / 2, (wah - h) / 2, w, h, nullptr, nullptr, hInstance, nullptr);
+      //CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -266,4 +187,3 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
-
