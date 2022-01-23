@@ -38,7 +38,8 @@ struct ScreenToolWnd::Impl
 	Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wParam, LPARAM lParam);
 	~Impl();
 
-	HWND _hWnd;
+	HHOOK _hhkCallKeyboardMsg = 0;
+	HWND _hWnd = 0;
 	POINT _clickPoint = { 0 };
 	RECT _currentPreviewScr = {0}, _currentPreviewPos = {0};
 	std::vector<RECT> _realScrRects, _previwScrRects, _realPosRects, _previewPosRects;
@@ -163,24 +164,25 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 
 	WinPos winPositions[] = {
 		{ 0, L"Big Center", 7, 7, 90, 90 },
-		{ 0, L"Small Center", 20, 20, 60, 60 },
 
 		{ 1, L"Left Half", 3, 3, 46, 94 },
 		{ 1, L"Right Half", 52, 3, 46, 94 },
 
-		//{ 2, L"Top Half", 3, 3, 94, 46 },
-		//{ 2, L"Bottom Half", 52, 3, 94, 46 },
-		{ 2, L"Right 1", 3, 3, 94, 14 },
-		{ 2, L"Right 2", 3, 19, 94, 14 },
-		{ 2, L"Right 3", 3, 35, 94, 14 },
-		{ 2, L"Right 4", 3, 51, 94, 14 },
-		{ 2, L"Right 5", 3, 67, 94, 14 },
-		{ 2, L"Right 6", 3, 83, 94, 14 },
+		{ 2, L"Top Half", 3, 3, 94, 46 },
+		{ 2, L"Bottom Half", 3, 52, 94, 46 },
 
+		{ 0, L"Small Center", 20, 20, 60, 60 },
+
+		{ 2, L"Right 1", 5, 03, 90, 15 },
+		{ 2, L"Right 2", 5, 19, 90, 15 },
+		{ 2, L"Right 3", 5, 35, 90, 15 },
+		{ 2, L"Right 4", 5, 51, 90, 15 },
+		{ 2, L"Right 5", 5, 67, 90, 15 },
+		{ 2, L"Right 6", 5, 83, 90, 15 },
 
 		{ 1, L"Top Left", 3, 3, 42, 42 },
-		{ 1, L"Bottom Left", 3, 56, 42, 42 },
 		{ 1, L"Top Right", 56, 3, 42, 42 },
+		{ 1, L"Bottom Left", 3, 56, 42, 42 },
 		{ 1, L"Bottom Right", 56, 56, 42, 42 }
 	};
 
@@ -257,8 +259,15 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	{
 		hWndToImplMap[_hWnd] = this;
 		::ShowWindow(_hWnd, SW_SHOW);
-		::SetFocus(_hWnd);
-		//SetActiveWindow(_hWnd);
+
+		HMODULE hModDll = GetModuleHandle(BUILD(MT_DLL_NAME));
+		if (hModDll != NULL)
+		{
+			HOOKPROC hkCallKeyboardMsg = (HOOKPROC)GetProcAddress(hModDll, MT_HOOK_PROC_KYB);
+
+			DWORD dwThreadId = ::GetCurrentThreadId();
+			_hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, NULL, dwThreadId);
+		}
 	}
 }
 
@@ -267,6 +276,8 @@ extern HINSTANCE hInst;  // current instance
 ScreenToolWnd::Impl::~Impl()
 {
 	if (hInst) {
+		UnhookWindowsHookEx(_hhkCallKeyboardMsg);
+
 		hWndToImplMap.erase(_hWnd);
 		//SendMessage(_hWnd, WM_CLOSE, 0, 0);
 		if(IsWindow(_hWnd))

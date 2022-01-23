@@ -38,12 +38,12 @@ BOOL Hooks::Install()
 	}
 
 
-	// GetKeyboardProc function
-	HOOKPROC hkCallKeyboardMsg = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_KYB);
-	if (!hkCallKeyboardMsg)
-	{
-		return FALSE;
-	}
+	//// GetKeyboardProc function
+	//HOOKPROC hkCallKeyboardMsg = (HOOKPROC)GetProcAddress(hModDLL, MT_HOOK_PROC_KYB);
+	//if (!hkCallKeyboardMsg)
+	//{
+	//	return FALSE;
+	//}
 
 	// Set hook on CallWndProc
 	hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, hModDLL, NULL);
@@ -59,12 +59,12 @@ BOOL Hooks::Install()
 		return FALSE;
 	}
 
-	// Set hook on Keyboard
-	hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, hModDLL, NULL);
-	if (!hhkCallKeyboardMsg)
-	{
-		return FALSE;
-	}
+	//// Set hook on Keyboard
+	//hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, hModDLL, NULL);
+	//if (!hhkCallKeyboardMsg)
+	//{
+	//	return FALSE;
+	//}
 
 	return TRUE;
 }

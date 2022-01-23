@@ -36,9 +36,6 @@
     <ClInclude Include="..\MenuCommon\ScreenToolWnd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\MenuCommon\Defines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\MenuCommon\Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>

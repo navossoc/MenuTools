@@ -50,6 +50,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_TESTAPP));
 
+    /*
 	 HMODULE hModDLL = LoadLibrary(BUILD(MT_DLL_NAME));
 	 if (!hModDLL)
 	 {
@@ -98,27 +99,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	 {
 		 return FALSE;
 	 }
+   */
+    DWORD dwThreadId = ::GetCurrentThreadId();
 
-    //DWORD dwThreadId = ::GetCurrentThreadId();
+	 // Set hook on CallWndProc
+    hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, NULL, dwThreadId);
+    if (!hhkCallWndProc)
+    {
+        return FALSE;
+    }
 
-    //hhkCallWndProc = SetWindowsHookEx(WH_CALLWNDPROC, hkCallWndProc, NULL, dwThreadId);
-    //if (!hhkCallWndProc)
-    //{
-    //    return FALSE;
-    //}
+    // Set hook on GetMessage
+    hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, NULL, dwThreadId);
+    if (!hhkGetMessage)
+    {
+        return FALSE;
+    }
 
-    //// Set hook on GetMessage
-    //hhkGetMessage = SetWindowsHookEx(WH_GETMESSAGE, hkGetMsgProc, NULL, dwThreadId);
-    //if (!hhkGetMessage)
-    //{
-    //    return FALSE;
-    //}
-
-    //hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, NULL, dwThreadId);
-    //if (!hhkGetMessage)
-    //{
-    //    return FALSE;
-    //}
+	 // Set hook on Keyboard
+    hhkCallKeyboardMsg = SetWindowsHookEx(WH_KEYBOARD, hkCallKeyboardMsg, NULL, dwThreadId);
+    if (!hhkGetMessage)
+    {
+        return FALSE;
+    }
 
     MSG msg;
 
