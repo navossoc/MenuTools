@@ -71,8 +71,40 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 		break;
 	}
+	case WM_LBUTTONDBLCLK:
+	case WM_NCLBUTTONDBLCLK:
+	{
+		//lastButtonDown = { 0, 0 };
+		ScreenToolWnd::pWnd.reset();
+		POINT bu = {
+			GET_X_LPARAM(lParam),
+			GET_Y_LPARAM(lParam)
+		};
+		//ClientToScreen(hWnd, &bu);
+		std::wostringstream os;
+		os << L"Button DblClk: " << bu.x << L", " << bu.y << std::endl;
+		OutputDebugString(os.str().c_str());
+		break;
+	}
 
-	case WM_LBUTTONUP: {
+	case WM_LBUTTONUP: 
+	{
+		if (is_one_of(wParam, MK_CONTROL, MK_SHIFT))
+		{
+			LONG diff = wParam == MK_CONTROL ? 10 : -10;
+
+			POINT pt = { 0 };
+			GetCursorPos(&pt);
+			//ScreenToClient(hWnd, &pt);
+			SetCursorPos(pt.x, pt.y - diff);
+
+			HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
+			RECT r = { 0 };
+			GetWindowRect(hWnd, &r);
+			InflateRect(&r, diff, diff);
+			SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+			return FALSE;
+		}
 		POINT& lbd = lastButtonDown;
 		POINT bu = {
 			GET_X_LPARAM(lParam),

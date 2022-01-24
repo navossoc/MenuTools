@@ -435,12 +435,12 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 			DestroyWindow(hWnd);
 		}
-		else
-		{
-			wchar_t strDataToSend[32];
-			wsprintf(strDataToSend, L"%c", wParam);
-			MessageBox(NULL, strDataToSend, L"keyselected", MB_OK);
-		}
+		//else
+		//{
+		//	wchar_t strDataToSend[32];
+		//	wsprintf(strDataToSend, L"%c", wParam);
+		//	MessageBox(NULL, strDataToSend, L"keyselected", MB_OK);
+		//}
 		break;
 
 	} // end switch
