@@ -7,8 +7,9 @@
 #include <sstream>
 
 #include "MenuTools.h"
+#include "MenuCommon/Logger.h"
 #include "MenuCommon/TrayIcon.h"
-#include <MenuCommon/ScreenToolWnd.h>
+#include "MenuCommon/ScreenToolWnd.h"
 
 #define WM_GETSYSMENU						0x313
 
@@ -89,22 +90,6 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_LBUTTONUP: 
 	{
-		if (is_one_of(wParam, MK_CONTROL, MK_SHIFT))
-		{
-			LONG diff = wParam == MK_CONTROL ? 10 : -10;
-
-			POINT pt = { 0 };
-			GetCursorPos(&pt);
-			//ScreenToClient(hWnd, &pt);
-			SetCursorPos(pt.x, pt.y - diff);
-
-			HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
-			RECT r = { 0 };
-			GetWindowRect(hWnd, &r);
-			InflateRect(&r, diff, diff);
-			SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
-			return FALSE;
-		}
 		POINT& lbd = lastButtonDown;
 		POINT bu = {
 			GET_X_LPARAM(lParam),
@@ -115,17 +100,46 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		os << L"Button Up: " << bu.x << L", " << bu.y << std::endl;
 		OutputDebugString(os.str().c_str());
 		if (std::abs(lbd.x - bu.x) > 2 || std::abs(lbd.y - bu.y) > 2)
-			return FALSE;
-
-		wParam = SendMessage(hWnd, WM_NCHITTEST, wParam, lParam);
-
-		// Title bar
-		if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
 		{
-			ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, MAKELPARAM(bu.x, bu.y));
+			//ScreenToolWnd::pWnd.reset();
+			return FALSE;
 		}
+
+		if (is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
+		{
+			LONG diff = wParam == MK_CONTROL ? 10 : -10;
+
+			POINT pt = { 0 };
+			GetCursorPos(&pt);
+			//ScreenToClient(hWnd, &pt);
+			SetCursorPos(pt.x, pt.y - diff);
+
+			//HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
+			RECT r = { 0 };
+			GetWindowRect(hWnd, &r);
+			InflateRect(&r, diff, diff);
+			SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+		}
+		else
+		{
+			wParam = SendMessage(hWnd, WM_NCHITTEST, wParam, lParam);
+
+			// Title bar
+			if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
+			{
+				log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
+				if (ScreenToolWnd::pWnd)
+				{
+					ScreenToolWnd::pWnd.reset();
+				}
+				else
+				{
+					ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, MAKELPARAM(bu.x, bu.y));
+				}
+			}
+		}
+
 		return FALSE;
-		break;
 	}
 
 	// Roll-up/Unroll (hard coded for now)
