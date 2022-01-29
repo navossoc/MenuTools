@@ -5,6 +5,7 @@
 
 #include <windowsx.h>
 #include <sstream>
+#include <chrono>
 
 #include "MenuTools.h"
 #include "MenuCommon/Logger.h"
@@ -23,6 +24,10 @@ namespace {
 // Process messages
 LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	using namespace std::chrono;
+
+	static high_resolution_clock::time_point last_lbutton_down;
+
 	switch (message)
 	{
 	case WM_CONTEXTMENU:
@@ -54,16 +59,18 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 		break;
 	}
-	case WM_NCLBUTTONDOWN: {
+	case WM_LBUTTONDOWN: 
+	case WM_NCLBUTTONDOWN: 
+	{
+		ScreenToolWnd::pWnd.reset();
+		last_lbutton_down = std::chrono::high_resolution_clock::now();
 		if (wParam == HTCAPTION) 
 		{
 			lastButtonDown = {
 				GET_X_LPARAM(lParam),
 				GET_Y_LPARAM(lParam)
 			};
-			std::wostringstream os;
-			os << L"Button Down: " << lastButtonDown.x << L", " << lastButtonDown.y << std::endl;
-			OutputDebugString(os.str().c_str());
+			log_debug(L"LButtonDown: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		}
 		else
 		{
@@ -75,33 +82,33 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_LBUTTONDBLCLK:
 	case WM_NCLBUTTONDBLCLK:
 	{
-		//lastButtonDown = { 0, 0 };
-		ScreenToolWnd::pWnd.reset();
 		POINT bu = {
 			GET_X_LPARAM(lParam),
 			GET_Y_LPARAM(lParam)
 		};
-		//ClientToScreen(hWnd, &bu);
-		std::wostringstream os;
-		os << L"Button DblClk: " << bu.x << L", " << bu.y << std::endl;
-		OutputDebugString(os.str().c_str());
+		log_debug(L"LButtonDblClick: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		break;
 	}
 
 	case WM_LBUTTONUP: 
 	{
+		auto now = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
+		double dbl_click = GetDoubleClickTime();
+		if (millis.count() <= dbl_click)
+			break;
+
+
 		POINT& lbd = lastButtonDown;
 		POINT bu = {
 			GET_X_LPARAM(lParam),
 			GET_Y_LPARAM(lParam)
 		};
 		ClientToScreen(hWnd, &bu);
-		std::wostringstream os;
-		os << L"Button Up: " << bu.x << L", " << bu.y << std::endl;
-		OutputDebugString(os.str().c_str());
+		log_debug(L"LButtonUp: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+
 		if (std::abs(lbd.x - bu.x) > 2 || std::abs(lbd.y - bu.y) > 2)
 		{
-			//ScreenToolWnd::pWnd.reset();
 			return FALSE;
 		}
 
