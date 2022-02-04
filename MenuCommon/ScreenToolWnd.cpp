@@ -272,6 +272,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	{
 		hWndToImplMap[_hWnd] = this;
 		::ShowWindow(_hWnd, SW_SHOW);
+		log_debug(L"ShowWindow, ScreenToolWnd::pWnd: {}", (void*)this);
 
 		HMODULE hModDll = GetModuleHandle(BUILD(MT_DLL_NAME));
 		if (hModDll != NULL)
@@ -302,9 +303,9 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 {
 	using std::ranges::find_if;
 
-	wstring msg = wm_to_wstring(message);
-	if(!msg.empty())
-		log_debug(L"Message: {}\n", msg);
+	//wstring msg = wm_to_wstring(message);
+	//if(!msg.empty())
+	//	log_debug(L"Message: {}\n", msg);
 	LRESULT res = 0;
 
 	POINT pt = { 0 };

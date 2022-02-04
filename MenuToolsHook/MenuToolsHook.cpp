@@ -6,6 +6,7 @@
 #include <windowsx.h>
 #include <sstream>
 #include <chrono>
+#include <future>
 
 #include "MenuTools.h"
 #include "MenuCommon/Logger.h"
@@ -15,11 +16,6 @@
 #define WM_GETSYSMENU						0x313
 
 extern HINSTANCE hInst;
-namespace {
-	POINT lastButtonDown = { 0 };
-	WPARAM lastHitTest = 0;
-	//ScreenToolWnd::Ptr pWnd;
-}
 
 // Process messages
 LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -27,6 +23,9 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	using namespace std::chrono;
 
 	static high_resolution_clock::time_point last_lbutton_down;
+	static POINT lastButtonDown = { 0 };
+	static WPARAM lastHitTest = 0;
+	static bool dblClick = false;
 
 	switch (message)
 	{
@@ -62,7 +61,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_LBUTTONDOWN: 
 	case WM_NCLBUTTONDOWN: 
 	{
-		ScreenToolWnd::pWnd.reset();
+		dblClick = false;
 		last_lbutton_down = std::chrono::high_resolution_clock::now();
 		if (wParam == HTCAPTION) 
 		{
@@ -82,21 +81,23 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_LBUTTONDBLCLK:
 	case WM_NCLBUTTONDBLCLK:
 	{
+		dblClick = true;
+		//ScreenToolWnd::pWnd.reset();
+		auto now = std::chrono::high_resolution_clock::now();
 		POINT bu = {
 			GET_X_LPARAM(lParam),
 			GET_Y_LPARAM(lParam)
 		};
-		log_debug(L"LButtonDblClick: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
+		double dbl_click = GetDoubleClickTime();
+
+		log_debug(L"LButtonDblClick: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
 		break;
 	}
 
 	case WM_LBUTTONUP: 
 	{
 		auto now = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
-		double dbl_click = GetDoubleClickTime();
-		if (millis.count() <= dbl_click)
-			break;
 
 
 		POINT& lbd = lastButtonDown;
@@ -105,9 +106,18 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			GET_Y_LPARAM(lParam)
 		};
 		ClientToScreen(hWnd, &bu);
-		log_debug(L"LButtonUp: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 
-		if (std::abs(lbd.x - bu.x) > 2 || std::abs(lbd.y - bu.y) > 2)
+		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
+		double dbl_click = GetDoubleClickTime();
+
+		log_debug(L"LButtonUp: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
+
+		//if (millis.count() <= dbl_click)
+		//	return FALSE;
+
+		static const LONG TOL = 1;
+		RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
+		if (!PtInRect(&tolerance, bu))
 		{
 			return FALSE;
 		}
@@ -141,12 +151,34 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				else
 				{
-					ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, message, wParam, MAKELPARAM(bu.x, bu.y));
+					/*PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));*/
+					//std::async(std::launch::async, [hWnd, wParam, bu]()
+					std::thread t([hWnd, wParam, bu]()
+						{
+							Sleep(100);
+							if (!dblClick) 
+							{
+								PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));
+								//ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
+							}
+						}
+					);
+					t.detach();
+					//if (SendMessage(hWnd, WM_NCHITTEST, wParam, MAKELPARAM(bu.x, bu.y)) == HTCAPTION)
+					//if (!dblClick)
+					//	ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
 				}
 			}
 		}
 
 		return FALSE;
+	}
+
+	case WM_SHOW_WIN_POS:
+	{
+		log_debug(L"ShowWonPos: {}, {}", wParam, lParam);
+		ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, lParam);
+		break;
 	}
 
 	// Roll-up/Unroll (hard coded for now)

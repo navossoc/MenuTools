@@ -66,6 +66,7 @@ using std::wstring;
 // Tray
 #define MT_TRAY_MESSAGE						WM_USER + 0x200
 
+#define WM_SHOW_WIN_POS						WM_USER + 0x220
 
 
 #ifdef _WIN64
@@ -112,6 +113,7 @@ inline wstring wm_to_wstring(UINT msg)
 	case WM_CAPTURECHANGED: return std::format(L"WM_CAPTURECHANGED {:#08x}", WM_CAPTURECHANGED);
 	case WM_MOVING: return std::format(L"WM_MOVING {:#08x}", WM_MOVING);
 	case WM_POWERBROADCAST: return std::format(L"WM_POWERBROADCAST {:#08x}", WM_POWERBROADCAST);
+	case WM_SHOWWINDOW: return std::format(L"WM_SHOWWINDOW {:#08x}", WM_SHOWWINDOW);
 	default:
 		return wstring();
 		//	return std::format(L"{:#08x}",msg);
