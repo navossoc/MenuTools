@@ -1,0 +1,6 @@
+-t:Rebuild
+-p:Configuration=Release
+-p:Platform=x64
+-maxCpuCount
+-detailedSummary
+MenuTools.sln

@@ -538,6 +538,7 @@ inline It ScreenToolWnd::Impl::NextPos(It it, Ct& posRects)
 		it = posRects.begin();
 	else if (++it == posRects.end())
 		it = posRects.begin();
+	log_debug(L"NextPos {}", std::distance(posRects.begin(), it));
 	return it;
 }
 
@@ -548,6 +549,7 @@ inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct& posRects)
 		it = (--posRects.end());
 	else if (--it == posRects.begin())
 		it = (--posRects.end());
+	log_debug(L"PreviousPos {}", std::distance(posRects.begin(), it));
 	return it;
 }
 
