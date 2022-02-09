@@ -42,6 +42,9 @@
     <ClInclude Include="..\MenuCommon\TrayIcon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\MenuCommon\Defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TestApp.cpp">

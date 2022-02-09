@@ -2,6 +2,8 @@
 #include <string>
 #include <format>
 #include <sstream>
+#include <functional>
+
 using std::wstring;
 
 // Debug
@@ -189,3 +191,80 @@ bool is_one_of(T t, Tx p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8, P9 p
 	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6 || t == p7 || t == p8 || t == p9;
 }
 */
+
+using std::function;
+template<class T> struct Nothing { T nothing_; };
+
+template<class T, class HostT = Nothing<T>, T HostT::* member = &Nothing<T>::nothing_>
+struct ReadMember
+{
+	using Getter = function<T()>;
+
+	ReadMember(HostT* host)
+	{
+		_getter = [host]()
+		{
+			return (*host).*member;
+		};
+	}
+	ReadMember(const T& m)
+	{
+		_getter = [m]()
+		{
+			return m;
+		};
+	}
+	ReadMember(auto g)
+	{
+		_getter = g;
+	}
+	operator T () const
+	{
+		return _getter();
+	}
+	//template<typename OT>
+	//T operator = (const OT& m)
+	//{
+	//	static_assert(0, "bullshit!");
+	//}
+	template<typename OT> inline bool operator == (const OT& o) { return _getter() == o; }
+	template<typename OT> inline bool operator != (const OT& o) { return _getter() != o; }
+	template<typename OT> inline bool operator < (const OT& o) { return _getter() < o; }
+	template<typename OT> inline bool operator > (const OT& o) { return _getter() > o; }
+	template<typename OT> inline bool operator <= (const OT& o) { return _getter() <= o; }
+	template<typename OT> inline bool operator >= (const OT& o) { return _getter() >= o; }
+
+protected:
+	Getter _getter;
+};
+template<class T, class HostT, T HostT::* member>
+struct WriteMember : public ReadMember<T, HostT, member>
+{
+	using Setter = function<T(const T&)>;
+	WriteMember(HostT* host) : ReadMember(host)
+	{
+		_setter = [host](const T& m)
+		{
+			return (host->*member) = m;
+		};
+	}
+	T operator = (const T& m)
+	{
+		return _setter(m);
+	}
+private:
+	Setter _setter;
+};
+
+template<typename OT, class T, class HostT, T HostT::* member>
+bool operator == (const OT& l, const ReadMember<T, HostT, member>& r) { return l == r.operator T(); }
+template<typename OT, class T, class HostT, T HostT::* member>
+bool operator != (const OT& l, const ReadMember<T, HostT, member>& r) { return l != r.operator T(); }
+template<typename OT, class T, class HostT, T HostT::* member>
+bool operator < (const OT& l, const ReadMember<T, HostT, member>& r) { /*if (std::is_signed<OT>::value);*/ return l < r.operator T(); }
+template<typename OT, class T, class HostT, T HostT::* member>
+bool operator > (const OT& l, const ReadMember<T, HostT, member>& r) { return l > r.operator T(); }
+template<typename OT, class T, class HostT, T HostT::* member>
+bool operator <= (const OT& l, const ReadMember<T, HostT, member>& r) { return l <= r.operator T(); }
+template<typename OT, class T, class HostT, T HostT::* member>
+bool operator >= (const OT& l, const ReadMember<T, HostT, member>& r) { return l >= r.operator T(); }
