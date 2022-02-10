@@ -83,11 +83,32 @@ public:
 	bool empty() { return _posititioningWnds.empty(); }
 
 	ReadMember<UINT, ScreenWnd, &ScreenWnd::_scrNr> nr = { this };
+	ReadMember<RECT> pr = { [this]() { return _prvRect; } };
 	ReadMember<RECT> sr = { [this]() { return _scrRect; } };
 	ReadMember<LONG> x = { [this]() { return _scrRect.left; } };
 	ReadMember<LONG> y = { [this]() { return _scrRect.top; } };
 	ReadMember<LONG> w = { [this]() { return _scrRect.right - _scrRect.left; } };
 	ReadMember<LONG> h = { [this]() { return _scrRect.bottom - _scrRect.top; } };
+
+	bool hit(POINT pt)
+	{
+		return PtInRect(&_prvRect, pt);
+	}
+
+	RECT find(POINT pt)
+	{
+		using std::ranges::find_if;
+		RECT r = { 0 };
+
+		if (auto it = find_if(_posititioningWnds, [pt](PositioningWnd& pw) { return PtInRect(&pw.pr, pt); }); it != _posititioningWnds.end()) 
+		{
+			r = it->pr;
+		}
+
+		return r;
+	}
+
+
 };
 
 
@@ -114,11 +135,15 @@ RECT PositioningWnd::calcPreviewRect()
 	r.right = static_cast<LONG>(r.left + pc.w * (sw.w / 100.0));
 	r.bottom = static_cast<LONG>(r.top + pc.h * (sw.h / 100.0));
 
-	int ix = (r.right - r.left) - (r.right - r.left * pc.f);
-	int iy = (r.bottom - r.top) - (r.bottom - r.top* pc.f);
-	InflateRect(&r, ix, iy);
+	int w = r.right - r.left;
+	int h = r.bottom - r.top;
 
-	return  ScaleRect(r, F);
+	int ix = ((w * 1.0) - (w * pc.f)) / 2.0;
+	int iy = ((h * 1.0) - (h * pc.f)) / 2.0;
+	InflateRect(&r, -ix, -iy);
+	r = ScaleRect(r, F);
+
+	return r;
 }
 
 using ScreenWnds = std::vector<ScreenWnd>;
@@ -168,6 +193,7 @@ struct ScreenToolWnd::Impl
 	//SelectionWnds _selectionWnds;
 
 	POINT _clickPoint = { 0 };
+	RECT _currentPosWnd;
 	//RECT _currentPreviewScr = {0}, _currentPreviewPos = {0};
 	//std::vector<RECT> _realScrRects, _previwScrRects, _realPosRects, _previewPosRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -259,14 +285,18 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		{ 1, L"Left TwoThirds", 3, 3, 62, 94 },
 		{ 1, L"Right Third", 68, 3, 30, 94 },
 		{ 1, L"Big Center", 7, 7, 90, 90, 0.8 },
-		{ 1, L"Small Center", 20, 20, 60, 60, 0.7 },
-
-		{ 2, L"Left Half", 3, 3, 46, 94 },
-		{ 2, L"Right Half", 52, 3, 46, 94 },
-
 
 		{ 2, L"Left Third", 3, 3, 30, 94 },
 		{ 2, L"Right TwoThirds", 36, 3, 62, 94 },
+		{ 2, L"Small Center", 20, 20, 60, 60, 0.8 },
+
+		{ 2, L"Left Half", 3, 3, 46, 94, 0.8 },
+		{ 2, L"Right Half", 52, 3, 46, 94, 0.8 },
+
+		{ 1, L"Top Left", 3, 3, 42, 42, 0.8 },
+		{ 1, L"Top Right", 56, 3, 42, 42, 0.8 },
+		{ 1, L"Bottom Left", 3, 56, 42, 42, 0.8 },
+		{ 1, L"Bottom Right", 56, 56, 42, 42, 0.8 },
 
 		{ 4, L"Top Half", 3, 3, 94, 46 },
 		{ 4, L"Bottom Half", 3, 52, 94, 46 },
@@ -279,16 +309,11 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 
 
 		{ 3, L"Right 1", 5, 03, 90, 15 },
-		{ 3, L"Right 2", 5, 19, 90, 15 },
+		{ 3, L"Right 2", 5, 19, 90, 15 }
 		//{ 2, L"Right 3", 5, 35, 90, 15 },
 		//{ 2, L"Right 4", 5, 51, 90, 15 },
 		//{ 2, L"Right 5", 5, 67, 90, 15 },
 		//{ 2, L"Right 6", 5, 83, 90, 15 },
-
-		{ 2, L"Top Left", 3, 3, 42, 42, 0.9 },
-		{ 2, L"Top Right", 56, 3, 42, 42, 1.1 },
-		{ 2, L"Bottom Left", 3, 56, 42, 42, 1 },
-		{ 2, L"Bottom Right", 56, 56, 42, 42, 1 }
 	};
 
 	LONG ox = 0, oy = 0; // offset
@@ -402,12 +427,12 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	//	log_debug(L"Message: {}\n", msg);
 	LRESULT res = 0;
 
-	POINT pt = { 0 };
-	GetCursorPos(&pt);
-	ScreenToClient(hWnd, &pt);
+	//POINT pt = { 0 };
+	//GetCursorPos(&pt);
+	//ScreenToClient(hWnd, &pt);
 
-	LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
-	LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
+	//LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
+	//LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
 
 	//if (auto it = find_if(_previwScrRects, [&pt](RECT& r) {return PtInRect(&r, pt); }); it != _previwScrRects.end())
 	//{
@@ -478,6 +503,14 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 	case WM_MOUSEMOVE:
 	{
+		POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		ScreenToClient(hWnd, &pt);
+		if (auto it = find_if(_screenWnds, [pt](ScreenWnd& sw) { return sw.hit(pt); }); it != _screenWnds.end())
+		{
+			ScreenWnd& sw = *it;
+			_currentPosWnd = sw.find(pt);
+		}
+
 		//static std::deque<POINT> last_pts;
 		//last_pts.push_back(pt);
 		//while(last_pts.size() > 10)
@@ -614,8 +647,8 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		//	//DrawText(hDC, os.str().c_str(), -1, &pr, DT_LEFT | DT_TOP | DT_WORDBREAK);
 		//}
 
-		//FillRect(hDC, &_currentPreviewPos, GetSysColorBrush(COLOR_ACTIVECAPTION));
-		//FrameRect(hDC, &_currentPreviewPos, GetSysColorBrush(COLOR_HOTLIGHT));
+		FillRect(hDC, &_currentPosWnd, GetSysColorBrush(COLOR_ACTIVECAPTION));
+		FrameRect(hDC, &_currentPosWnd, GetSysColorBrush(COLOR_HOTLIGHT));
 
 		EndPaint(hWnd, &ps);
 		break;
