@@ -30,85 +30,95 @@ struct Screen
 };
 
 
-struct WinPos {
+struct PositioningCfg {
 	int scr; // screen 0 = all, 1 = first, 2 = second, ...
 	wstring n; // name
 	int x, y, w, h; // left, top, width, height in % from screen
+	float f = 1;
 };
+using PositioningCfgs = std::vector<PositioningCfg>;
 
-struct ScreenWnd {
-	ScreenWnd(RECT& r, UINT s):_rct(r), _scr(s) {
-		_prv = ScaleRect(_rct, F);
-	}
+struct ScreenWnd;
 
-	void Paint(PAINTSTRUCT& ps, HDC hDC);
-
-	
-	void push_back(WinPos& wp) { 
-
-		//wp.sw = this;
-		return _positions.push_back(_WinPos(wp, this));
+struct PositioningWnd {
+	PositioningWnd(PositioningCfg& pc, ScreenWnd* sw):_posCfg(pc),_scrWnd(*sw) {
+		pr = calcPreviewRect();
 	}
 
 private:
-	struct _WinPos {
-		_WinPos(WinPos& wp, ScreenWnd* sw_):_wp(wp),_sw(*sw_) {
+	PositioningCfg _posCfg;
+	ScreenWnd& _scrWnd;
 
-			UINT sx = _sw._rct.left, sy = _sw._rct.top;
-			UINT sw = _sw._rct.right - _sw._rct.left, sh = _sw._rct.bottom - _sw._rct.top;
-
-			RECT r = {
-				static_cast<LONG>(sx + _wp.x * (sw / 100.0)),
-				static_cast<LONG>(sy + _wp.y * (sh / 100.0)),
-			};
-			r.right = static_cast<LONG>(r.left + _wp.w * (sw / 100.0));
-			r.bottom = static_cast<LONG>(r.top + _wp.h * (sh / 100.0));
-			_pr = ScaleRect(r, F);
-		}
-		WinPos _wp;
-		ScreenWnd& _sw;
-		RECT _pr;
-		//ReadMember<RECT, _WinPos, &_WinPos::_pr> pr = { this };
-		//ReadMember<RECT> pr = { [this]() {
-		//	UINT sx = _sw._rct.left, sy = _sw._rct.top;
-		//	UINT sw = _sw._rct.right - _sw._rct.left, sh = _sw._rct.bottom - _sw._rct.top;
-		//	RECT r = {
-		//		static_cast<LONG>(sx + _wp.x * (sw / 100.0)),
-		//		static_cast<LONG>(sy + _wp.y * (sh / 100.0)),
-		//	};
-		//	r.right = static_cast<LONG>(r.left + _wp.w * (sw / 100.0));
-		//	r.bottom = static_cast<LONG>(r.top + _wp.h * (sh / 100.0));
-		//	return r;
-		//} };
-	};
-	using Positions = std::vector<_WinPos>;
-
-	UINT _scr; ///> Screen Nr
-	RECT _prv; ///> Preview
-	RECT _rct; ///> Screen
-	Positions _positions; ///> Position Windows
+	RECT calcPreviewRect();
 
 public:
-	ReadMember<UINT, ScreenWnd, &ScreenWnd::_scr> nr = { this };
-	//ReadMember<Positions, ScreenWnd, &ScreenWnd::_positions> positions = { this };
-	//ReadMember<RECT, ScreenWnd, &ScreenWnd::_prv> pr = { this };
-	//ReadMember<UINT> x = { [this]() { return _rct.left; } };
-	//ReadMember<UINT> y = { [this]() { return _rct.top; } };
-	//ReadMember<UINT> w = { [this]() { return _rct.right - _rct.left; } };
-	//ReadMember<UINT> h = { [this]() { return _rct.bottom - _rct.top; } };
+	RECT pr;
+	//ReadMember<RECT> pr = { calcPreviewRect() };
+};
+
+
+using PositioningWnds = std::vector<PositioningWnd>;
+
+struct ScreenWnd {
+	ScreenWnd(RECT& r, UINT s):_scrRect(r), _scrNr(s) {
+		_prvRect = ScaleRect(_scrRect, F);
+	}
+
+	void Paint(PAINTSTRUCT& ps, HDC hDC);
+	
+	void push_back(PositioningCfg& wp) { 
+		return _posititioningWnds.push_back(PositioningWnd(wp, this));
+	}
+
+private:
+
+	UINT _scrNr; ///> Screen Nr
+	RECT _prvRect; ///> Preview
+	RECT _scrRect; ///> Screen
+	PositioningWnds _posititioningWnds; ///> Positioning Windows
+
+	friend struct PositioningWnd;
+
+public:
+	bool empty() { return _posititioningWnds.empty(); }
+
+	ReadMember<UINT, ScreenWnd, &ScreenWnd::_scrNr> nr = { this };
+	ReadMember<RECT> sr = { [this]() { return _scrRect; } };
+	ReadMember<LONG> x = { [this]() { return _scrRect.left; } };
+	ReadMember<LONG> y = { [this]() { return _scrRect.top; } };
+	ReadMember<LONG> w = { [this]() { return _scrRect.right - _scrRect.left; } };
+	ReadMember<LONG> h = { [this]() { return _scrRect.bottom - _scrRect.top; } };
 };
 
 
 void ScreenWnd::Paint(PAINTSTRUCT& ps, HDC hDC)
 {
-	FillRect(hDC, &_prv, GetSysColorBrush(COLOR_ACTIVEBORDER));
-	FrameRect(hDC, &_prv, GetSysColorBrush(COLOR_HOTLIGHT));
+	FillRect(hDC, &_prvRect, GetSysColorBrush(COLOR_ACTIVEBORDER));
+	FrameRect(hDC, &_prvRect, GetSysColorBrush(COLOR_HOTLIGHT));
 
-	for (_WinPos& wp : _positions) {
-		RECT pr = wp._pr;
+	for (PositioningWnd& wp : _posititioningWnds) {
+		RECT pr = wp.pr;
 		FillRect(hDC, &pr, GetSysColorBrush(COLOR_INACTIVECAPTION));
 		FrameRect(hDC, &pr, GetSysColorBrush(COLOR_HOTLIGHT));
 	}
+}
+
+RECT PositioningWnd::calcPreviewRect()
+{
+	PositioningCfg& pc = _posCfg;
+	ScreenWnd& sw = _scrWnd;
+	RECT r = {
+		static_cast<LONG>(sw.x + pc.x * (sw.w / 100.0)),
+		static_cast<LONG>(sw.y + pc.y * (sw.h / 100.0)),
+	};
+	r.right = static_cast<LONG>(r.left + pc.w * (sw.w / 100.0));
+	r.bottom = static_cast<LONG>(r.top + pc.h * (sw.h / 100.0));
+
+	int ix = (r.right - r.left) - (r.right - r.left * pc.f);
+	int iy = (r.bottom - r.top) - (r.bottom - r.top* pc.f);
+	InflateRect(&r, ix, iy);
+
+	return  ScaleRect(r, F);
 }
 
 using ScreenWnds = std::vector<ScreenWnd>;
@@ -167,7 +177,7 @@ struct ScreenToolWnd::Impl
 	template<typename It, typename Ct>
 	inline It PreviousPos(It it, Ct& posRects);
 
-	RECT Calculate(WinPos& wp, Screen& s);
+	//RECT Calculate(WinPos& wp, Screen& s);
 
 	static std::map<HWND, ScreenToolWnd::Impl*> hWndToImplMap;
 	static LRESULT CALLBACK ToolWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -244,38 +254,22 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		}
 	}
 
-	LONG ox = 0, oy = 0; // offset
 
-	for (RECT& sr : scrRects) // screen rect
-	{
-		ox = std::min(sr.left, ox);
-		oy = std::min(sr.top, oy);
-	}
+	PositioningCfgs winPositions = {
+		{ 1, L"Left TwoThirds", 3, 3, 62, 94 },
+		{ 1, L"Right Third", 68, 3, 30, 94 },
+		{ 1, L"Big Center", 7, 7, 90, 90, 0.8 },
+		{ 1, L"Small Center", 20, 20, 60, 60, 0.7 },
 
-	for (RECT& sr : scrRects)
-	{
-		OffsetRect(&sr, -ox, -oy);
+		{ 2, L"Left Half", 3, 3, 46, 94 },
+		{ 2, L"Right Half", 52, 3, 46, 94 },
 
-		_toolRect.left = std::min( sr.left, _toolRect.left );
-		_toolRect.top = std::min( sr.top, _toolRect.top );
-		_toolRect.right = std::max( sr.right, _toolRect.right );
-		_toolRect.bottom = std::max( sr.bottom, _toolRect.bottom );
-	}
 
-	WinPos winPositions[] = {
-		{ 0, L"Big Center", 7, 7, 90, 90 },
+		{ 2, L"Left Third", 3, 3, 30, 94 },
+		{ 2, L"Right TwoThirds", 36, 3, 62, 94 },
 
-		{ 1, L"Left Half", 3, 3, 46, 94 },
-		{ 1, L"Right Half", 52, 3, 46, 94 },
-
-		//{ 1, L"Left TwoThirds", 3, 3, 62, 94 },
-		//{ 1, L"Right Third", 68, 3, 30, 94 },
-
-		//{ 1, L"Left Third", 3, 3, 30, 94 },
-		//{ 1, L"Right TwoThirds", 36, 3, 62, 94 },
-
-		//{ 2, L"Top Half", 3, 3, 94, 46 },
-		//{ 2, L"Bottom Half", 3, 52, 94, 46 },
+		{ 4, L"Top Half", 3, 3, 94, 46 },
+		{ 4, L"Bottom Half", 3, 52, 94, 46 },
 
 		//{ 2, L"Top TwoThirds", 3, 3, 94, 62 },
 		//{ 2, L"Bottom Third", 3, 68, 94, 30 },
@@ -283,54 +277,54 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		//{ 2, L"Top Third", 3, 3, 94, 30 },
 		//{ 2, L"Bottom TwoThirds", 3, 36, 94, 62 },
 
-		{ 0, L"Small Center", 20, 20, 60, 60 },
 
-		{ 2, L"Right 1", 5, 03, 90, 15 },
-		{ 2, L"Right 2", 5, 19, 90, 15 },
+		{ 3, L"Right 1", 5, 03, 90, 15 },
+		{ 3, L"Right 2", 5, 19, 90, 15 },
 		//{ 2, L"Right 3", 5, 35, 90, 15 },
 		//{ 2, L"Right 4", 5, 51, 90, 15 },
 		//{ 2, L"Right 5", 5, 67, 90, 15 },
 		//{ 2, L"Right 6", 5, 83, 90, 15 },
 
-		//{ 1, L"Top Left", 3, 3, 42, 42 },
-		//{ 1, L"Top Right", 56, 3, 42, 42 },
-		//{ 1, L"Bottom Left", 3, 56, 42, 42 },
-		//{ 1, L"Bottom Right", 56, 56, 42, 42 }
+		{ 2, L"Top Left", 3, 3, 42, 42, 0.9 },
+		{ 2, L"Top Right", 56, 3, 42, 42, 1.1 },
+		{ 2, L"Bottom Left", 3, 56, 42, 42, 1 },
+		{ 2, L"Bottom Right", 56, 56, 42, 42, 1 }
 	};
+
+	LONG ox = 0, oy = 0; // offset
+	for (RECT& sr : scrRects) // clac offset from different screens
+	{
+		ox = std::min(sr.left, ox);
+		oy = std::min(sr.top, oy);
+	}
+	for (RECT& sr : scrRects)
+		OffsetRect(&sr, -ox, -oy);
 
 	for (size_t i = 0; i < scrRects.size(); ++i)
 	{
 		RECT& sr = scrRects[i];
-		//Screen s = {
-		//	i + 1,
-		//	sr.left,
-		//	sr.top,
-		//	sr.right - sr.left,
-		//	sr.bottom - sr.top
-		//};
 
-		RECT r = sr;
-		_screenWnds.push_back(ScreenWnd(r, i + 1));
-		ScreenWnd& sw = _screenWnds.back();
+		ScreenWnd sw(ScreenWnd(sr, i + 1));
 
-		for (WinPos& wp : filter(winPositions, [sw](WinPos& wp) { return wp.scr == 0 || wp.scr == sw.nr; })) {
+		for (PositioningCfg& wp : filter(winPositions, [sw](PositioningCfg& wp) { return wp.scr == 0 || wp.scr == sw.nr; })) {
 			sw.push_back(wp);
 		}
+		// only if has positioning wnds
+		if(!sw.empty())
+			_screenWnds.push_back(sw);
 	}
+	if (_screenWnds.empty())
+		return; // if no positioning wnds,we have nothing to do
 
-	//_previwScrRects.clear();
-	//_previewPosRects.clear();
-	//std::ranges::transform(scrRects, std::back_inserter(_previwScrRects),
-	//	[](RECT& r) {return ScaleRect(r, F); });
-
-	//std::ranges::transform(_realPosRects, std::back_inserter(_previewPosRects),
-	//	[](RECT& r) {return ScaleRect(r, F); });
-
-	// after all calculations, reset the offset in case of more than one screen with different resolution 
-	//for (RECT& bpr : _realPosRects)
-	//{
-	//	OffsetRect(&bpr, ox, oy);
-	//}
+	// only if has positioning wnds
+	for (ScreenWnd& sw : _screenWnds)
+	{
+		RECT sr = sw.sr;
+		_toolRect.left = std::min( sr.left, _toolRect.left );
+		_toolRect.top = std::min( sr.top, _toolRect.top );
+		_toolRect.right = std::max( sr.right, _toolRect.right );
+		_toolRect.bottom = std::max( sr.bottom, _toolRect.bottom );
+	}
 
 	_toolRect = ScaleRect(_toolRect, F);
 
@@ -600,7 +594,7 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		PAINTSTRUCT ps;
 		HDC hDC = BeginPaint(hWnd, &ps);
 
-		for (ScreenWnd& sw : _screenWnds)
+		for (ScreenWnd& sw : filter(_screenWnds, [](ScreenWnd& sw) { return !sw.empty(); }))
 			sw.Paint(ps, hDC);
 
 		//for (RECT sr : _previwScrRects) // screen rect		
@@ -666,14 +660,14 @@ inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct& posRects)
 }
 
 
-RECT ScreenToolWnd::Impl::Calculate(WinPos& wp, Screen& s)
-{
-	RECT r = { 
-		static_cast<LONG>(s.x + wp.x * (s.w / 100.0)),
-		static_cast<LONG>(s.y + wp.y * (s.h / 100.0)),
-	};
-	r.right = static_cast<LONG>(r.left + wp.w * (s.w / 100.0));
-	r.bottom = static_cast<LONG>(r.top + wp.h * (s.h / 100.0));
-	return r;
-}
+//RECT ScreenToolWnd::Impl::Calculate(PositioningCfg& wp, Screen& s)
+//{
+//	RECT r = { 
+//		static_cast<LONG>(s.x + wp.x * (s.w / 100.0)),
+//		static_cast<LONG>(s.y + wp.y * (s.h / 100.0)),
+//	};
+//	r.right = static_cast<LONG>(r.left + wp.w * (s.w / 100.0));
+//	r.bottom = static_cast<LONG>(r.top + wp.h * (s.h / 100.0));
+//	return r;
+//}
 
