@@ -23,18 +23,18 @@ namespace
 }
 RECT ScaleRect(RECT& in, FLOAT f);
 
-struct Screen
-{
-	size_t scr; // screen number
-	int x, y, w, h; // left, top, width, height in pixels
-};
+//struct Screen
+//{
+//	size_t scr; // screen number
+//	int x, y, w, h; // left, top, width, height in pixels
+//};
 
 
 struct PositioningCfg {
 	int scr; // screen 0 = all, 1 = first, 2 = second, ...
 	wstring n; // name
 	int x, y, w, h; // left, top, width, height in % from screen
-	float f = 1;
+	double f = 1;
 };
 using PositioningCfgs = std::vector<PositioningCfg>;
 
@@ -42,25 +42,30 @@ struct ScreenWnd;
 
 struct PositioningWnd {
 	PositioningWnd(PositioningCfg& pc, ScreenWnd* sw):_posCfg(pc),_scrWnd(*sw) {
-		pr = calcPreviewRect();
+		screenRect = calcScreenRect();
+		//OffsetRect(&screenRect, -(sw->previewOffset()), 0);
+		previewRect = calcPreviewRect();
 	}
 
 private:
 	PositioningCfg _posCfg;
 	ScreenWnd& _scrWnd;
 
+	RECT calcScreenRect();
 	RECT calcPreviewRect();
 
 public:
-	RECT pr;
-	//ReadMember<RECT> pr = { calcPreviewRect() };
+	RECT screenRect;
+	RECT previewRect;
+	//PropR<RECT> screenRect = { this->calcScreenRect() };
+	//PropR<RECT> previewRect = { this->calcPreviewRect() };
 };
 
 
 using PositioningWnds = std::vector<PositioningWnd>;
 
 struct ScreenWnd {
-	ScreenWnd(RECT& r, UINT s):_scrRect(r), _scrNr(s) {
+	ScreenWnd(RECT& r, UINT s, UINT po):_scrRect(r), _scrNr(s), _previewOffset(po) {
 		_prvRect = ScaleRect(_scrRect, F);
 	}
 
@@ -73,6 +78,7 @@ struct ScreenWnd {
 private:
 
 	UINT _scrNr; ///> Screen Nr
+	UINT _previewOffset = 0; ///> Offset of preview, if multiple previews are available
 	RECT _prvRect; ///> Preview
 	RECT _scrRect; ///> Screen
 	PositioningWnds _posititioningWnds; ///> Positioning Windows
@@ -82,30 +88,31 @@ private:
 public:
 	bool empty() { return _posititioningWnds.empty(); }
 
-	ReadMember<UINT, ScreenWnd, &ScreenWnd::_scrNr> nr = { this };
-	ReadMember<RECT> pr = { [this]() { return _prvRect; } };
-	ReadMember<RECT> sr = { [this]() { return _scrRect; } };
-	ReadMember<LONG> x = { [this]() { return _scrRect.left; } };
-	ReadMember<LONG> y = { [this]() { return _scrRect.top; } };
-	ReadMember<LONG> w = { [this]() { return _scrRect.right - _scrRect.left; } };
-	ReadMember<LONG> h = { [this]() { return _scrRect.bottom - _scrRect.top; } };
+	PropR<UINT, ScreenWnd, &ScreenWnd::_scrNr> nr = { this };
+	PropR<UINT, ScreenWnd, &ScreenWnd::_previewOffset> previewOffset = { this };
+	PropR<RECT> pr = { [this]() { return _prvRect; } };
+	PropR<RECT> sr = { [this]() { return _scrRect; } };
+	PropR<LONG> x = { [this]() { return _scrRect.left; } };
+	PropR<LONG> y = { [this]() { return _scrRect.top; } };
+	PropR<LONG> w = { [this]() { return _scrRect.right - _scrRect.left; } };
+	PropR<LONG> h = { [this]() { return _scrRect.bottom - _scrRect.top; } };
 
 	bool hit(POINT pt)
 	{
 		return PtInRect(&_prvRect, pt);
 	}
 
-	RECT find(POINT pt)
+	PositioningWnd* find(POINT pt)
 	{
 		using std::ranges::find_if;
-		RECT r = { 0 };
 
-		if (auto it = find_if(_posititioningWnds, [pt](PositioningWnd& pw) { return PtInRect(&pw.pr, pt); }); it != _posititioningWnds.end()) 
+		auto &pw = _posititioningWnds;
+		if (auto it = find_if(pw.rbegin(), pw.rend(), [pt](PositioningWnd& pw) { return PtInRect(&pw.previewRect, pt); }); it != pw.rend())
 		{
-			r = it->pr;
+			return &*it;
 		}
 
-		return r;
+		return nullptr;
 	}
 
 
@@ -118,13 +125,13 @@ void ScreenWnd::Paint(PAINTSTRUCT& ps, HDC hDC)
 	FrameRect(hDC, &_prvRect, GetSysColorBrush(COLOR_HOTLIGHT));
 
 	for (PositioningWnd& wp : _posititioningWnds) {
-		RECT pr = wp.pr;
+		RECT pr = wp.previewRect;
 		FillRect(hDC, &pr, GetSysColorBrush(COLOR_INACTIVECAPTION));
 		FrameRect(hDC, &pr, GetSysColorBrush(COLOR_HOTLIGHT));
 	}
 }
 
-RECT PositioningWnd::calcPreviewRect()
+RECT PositioningWnd::calcScreenRect()
 {
 	PositioningCfg& pc = _posCfg;
 	ScreenWnd& sw = _scrWnd;
@@ -135,14 +142,23 @@ RECT PositioningWnd::calcPreviewRect()
 	r.right = static_cast<LONG>(r.left + pc.w * (sw.w / 100.0));
 	r.bottom = static_cast<LONG>(r.top + pc.h * (sw.h / 100.0));
 
+	return r;
+
+}
+
+RECT PositioningWnd::calcPreviewRect()
+{
+	PositioningCfg& pc = _posCfg;
+	RECT r = calcScreenRect();
+
 	int w = r.right - r.left;
 	int h = r.bottom - r.top;
 
-	int ix = ((w * 1.0) - (w * pc.f)) / 2.0;
-	int iy = ((h * 1.0) - (h * pc.f)) / 2.0;
+	int ix = static_cast<int>(((w * 1.0) - (w * pc.f)) / 2.0);
+	int iy = static_cast<int>(((h * 1.0) - (h * pc.f)) / 2.0);
 	InflateRect(&r, -ix, -iy);
-	r = ScaleRect(r, F);
 
+	r = ScaleRect(r, F);	
 	return r;
 }
 
@@ -193,7 +209,8 @@ struct ScreenToolWnd::Impl
 	//SelectionWnds _selectionWnds;
 
 	POINT _clickPoint = { 0 };
-	RECT _currentPosWnd;
+	ScreenWnd* _currentScreenWnd = nullptr;
+	PositioningWnd* _currentPosWnd = nullptr;
 	//RECT _currentPreviewScr = {0}, _currentPreviewPos = {0};
 	//std::vector<RECT> _realScrRects, _previwScrRects, _realPosRects, _previewPosRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -264,22 +281,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 #endif
 	static UINT NP = 2; // Number of previews
 	
-	std::vector<RECT> scrRects;
-
-	UINT bo = 0; // base offset
-	for (RECT r : mInfos)
-	{
-		UINT w = r.right - r.left;
-		OffsetRect(&r, bo, 0);
-		bo = w * (NP - 1);
-		for (UINT i = 0; i < NP; ++i)
-		{
-			RECT ri = r;
-			OffsetRect(&ri, w * i, 0);
-			scrRects.push_back(ri);
-		}
-	}
-
+	//std::vector<RECT> scrRects;
 
 	PositioningCfgs winPositions = {
 		{ 1, L"Left TwoThirds", 3, 3, 62, 94 },
@@ -317,27 +319,37 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	};
 
 	LONG ox = 0, oy = 0; // offset
-	for (RECT& sr : scrRects) // clac offset from different screens
+	for (RECT& sr : mInfos) // clac offset from different screens
 	{
 		ox = std::min(sr.left, ox);
 		oy = std::min(sr.top, oy);
 	}
-	for (RECT& sr : scrRects)
-		OffsetRect(&sr, -ox, -oy);
 
-	for (size_t i = 0; i < scrRects.size(); ++i)
+	UINT bo = 0; // base offset
+	UINT nr = 0;
+	for (RECT r : mInfos)
 	{
-		RECT& sr = scrRects[i];
+		UINT w = r.right - r.left;
+		OffsetRect(&r, bo, 0);
+		bo = w * (NP - 1);
+		for (UINT i = 0; i < NP; ++i)
+		{
+			RECT ri = r;
+			OffsetRect(&ri, w * i, 0);
+			OffsetRect(&ri, -ox, -oy);
 
-		ScreenWnd sw(ScreenWnd(sr, i + 1));
+			ScreenWnd sw(ScreenWnd(ri, ++nr, w * i));
 
-		for (PositioningCfg& wp : filter(winPositions, [sw](PositioningCfg& wp) { return wp.scr == 0 || wp.scr == sw.nr; })) {
-			sw.push_back(wp);
+			for (PositioningCfg& wp : filter(winPositions, [sw](PositioningCfg& wp) { return wp.scr == 0 || wp.scr == sw.nr; })) {
+				sw.push_back(wp);
+			}
+
+			// only if has positioning wnds
+			if (!sw.empty())
+				_screenWnds.push_back(sw);
 		}
-		// only if has positioning wnds
-		if(!sw.empty())
-			_screenWnds.push_back(sw);
 	}
+
 	if (_screenWnds.empty())
 		return; // if no positioning wnds,we have nothing to do
 
@@ -427,9 +439,9 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	//	log_debug(L"Message: {}\n", msg);
 	LRESULT res = 0;
 
-	//POINT pt = { 0 };
-	//GetCursorPos(&pt);
-	//ScreenToClient(hWnd, &pt);
+	POINT pt = { 0 };
+	GetCursorPos(&pt);
+	ScreenToClient(hWnd, &pt);
 
 	//LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
 	//LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
@@ -481,6 +493,16 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 	case WM_LBUTTONDOWN:
 	{
+		if (_currentPosWnd)
+		{
+			//ScreenWnd& sw = *_currentScreenWnd;
+
+			RECT r = _currentPosWnd->screenRect;
+
+			HWND hParent = GetParent(hWnd);
+			SetWindowPos(hParent, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+
+		}
 		//if (auto scr_it = std::ranges::find_if(_previwScrRects, [this](RECT& r) { return EqualRect(&_currentPreviewScr, &r); }); scr_it != _previwScrRects.end())
 		//{
 		//	if (auto pos_it = std::ranges::find_if(_previewPosRects, [this](RECT& r) {return EqualRect(&r, &_currentPreviewPos); }); pos_it != _previewPosRects.end())
@@ -497,18 +519,32 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		//		}
 		//	}
 		//}
-		//ScreenToolWnd::pWnd.reset();
+		ScreenToolWnd::pWnd.reset();
 		return  DefWindowProc(hWnd, message, wParam, lParam);
 	}
 
 	case WM_MOUSEMOVE:
 	{
-		POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-		ScreenToClient(hWnd, &pt);
+		//POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		//ScreenToClient(hWnd, &pt);
 		if (auto it = find_if(_screenWnds, [pt](ScreenWnd& sw) { return sw.hit(pt); }); it != _screenWnds.end())
 		{
 			ScreenWnd& sw = *it;
-			_currentPosWnd = sw.find(pt);
+			_currentScreenWnd = &sw;
+			PositioningWnd* posWnd = sw.find(pt);
+			if (_currentPosWnd != posWnd)
+			{
+				if(_currentPosWnd)
+					InvalidateRect(hWnd, &_currentPosWnd->previewRect, TRUE);
+				_currentPosWnd = posWnd;
+				if (_currentPosWnd)
+					InvalidateRect(hWnd, &_currentPosWnd->previewRect, TRUE);
+			}
+		}
+		else
+		{
+			_currentScreenWnd = nullptr;
+			_currentPosWnd = nullptr;
 		}
 
 		//static std::deque<POINT> last_pts;
@@ -647,8 +683,12 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		//	//DrawText(hDC, os.str().c_str(), -1, &pr, DT_LEFT | DT_TOP | DT_WORDBREAK);
 		//}
 
-		FillRect(hDC, &_currentPosWnd, GetSysColorBrush(COLOR_ACTIVECAPTION));
-		FrameRect(hDC, &_currentPosWnd, GetSysColorBrush(COLOR_HOTLIGHT));
+		if (_currentPosWnd)
+		{
+			FillRect(hDC, &_currentPosWnd->previewRect, GetSysColorBrush(COLOR_ACTIVECAPTION));
+			FrameRect(hDC, &_currentPosWnd->previewRect, GetSysColorBrush(COLOR_HOTLIGHT));
+		}
+
 
 		EndPaint(hWnd, &ps);
 		break;

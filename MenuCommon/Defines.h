@@ -196,32 +196,68 @@ bool is_one_of(T t, Tx p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8, P9 p
 template<class T> struct Nothing { T nothing_; };
 
 template<class T, class HostT = Nothing<T>, T HostT::* member = &Nothing<T>::nothing_>
-struct ReadMember
+struct PropR
 {
 	using Getter = function<T()>;
 	using Type = T;
 
-	ReadMember() {}
-	ReadMember(Getter g) : getter_(g) {}
-	ReadMember(HostT* host)
+	PropR() {}
+	PropR(Getter g) : getter_(g) {}
+	PropR(HostT* host)
 	{
 		getter_ = [host]()
 		{
 			return (*host).*member;
 		};
 	}
-	ReadMember(const T& m)
+	PropR(const T& m)
 	{
 		getter_ = [m]()
 		{
 			return m;
 		};
 	}
-	inline operator T () const
+
+	inline operator T ()
+	{
+		return getter_();
+	}
+	inline operator const T() const
 	{
 		return getter_();
 	}
 
+	inline T* operator & ()
+	{
+		return getter_();
+	}
+	inline const T* operator & () const
+	{
+		return getter_();
+	}
+
+	inline T* operator -> ()
+	{
+		return getter_();
+	}
+	inline const T* operator -> () const
+	{
+		return getter_();
+	}
+
+	inline T operator () ()
+	{
+		return getter_();
+	}
+	inline const T operator () () const
+	{
+		return getter_();
+	}
+
+	inline T get()
+	{
+		return getter_();
+	}
 	//wstring str() const
 	//{
 	//	return std::to_string(static_cast<T>(getter_()));
@@ -242,11 +278,11 @@ protected:
 	Getter getter_;
 };
 template<class T, class HostT, T HostT::* member>
-struct WriteMember : public ReadMember<T, HostT, member>
+struct PropRW : public PropR<T, HostT, member>
 {
 	using Setter = function<T(const T&)>;
-	WriteMember() : ReadMember() {}
-	WriteMember(HostT* host) : ReadMember<T, HostT, member>(host)
+	PropRW() : PropR() {}
+	PropRW(HostT* host) : PropR<T, HostT, member>(host)
 	{
 		setter_ = [host](const T& m)
 		{
@@ -261,16 +297,16 @@ private:
 	Setter setter_;
 };
 
-template<typename L, class R, class H, R H::* m>
-bool operator == (const L& l, const ReadMember<R, H, m>& r) { return l == r.operator R(); }
-template<typename L, class R, class H, R H::* m>
-bool operator != (const L& l, const ReadMember<R, H, m>& r) { return l != r.operator R(); }
-template<typename L, class R, class H, R H::* m>
-bool operator < (const L& l, const ReadMember<R, H, m>& r) { return less_compare(l, r.operator R()); }
-template<typename L, class R, class H, R H::* m>
-bool operator > (const L& l, const ReadMember<R, H, m>& r) { return greater_compare(l, r.operator R()); }
-template<typename L, class R, class H, R H::* m>
-bool operator <= (const L& l, const ReadMember<R, H, m>& r) { return l == r || l < r; }
-template<typename L, class R, class H, R H::* m>
-bool operator >= (const L& l, const ReadMember<R, H, m>& r) { return l == r || l > r; }
-
+//template<typename L, class R, class H, R H::* m>
+//bool operator == (const L& l, const PropR<R, H, m>& r) { return l == r.operator R(); }
+//template<typename L, class R, class H, R H::* m>
+//bool operator != (const L& l, const PropR<R, H, m>& r) { return l != r.operator R(); }
+//template<typename L, class R, class H, R H::* m>
+//bool operator < (const L& l, const PropR<R, H, m>& r) { return less_compare(l, r.operator R()); }
+//template<typename L, class R, class H, R H::* m>
+//bool operator > (const L& l, const PropR<R, H, m>& r) { return greater_compare(l, r.operator R()); }
+//template<typename L, class R, class H, R H::* m>
+//bool operator <= (const L& l, const PropR<R, H, m>& r) { return l == r || l < r; }
+//template<typename L, class R, class H, R H::* m>
+//bool operator >= (const L& l, const PropR<R, H, m>& r) { return l == r || l > r; }
+//

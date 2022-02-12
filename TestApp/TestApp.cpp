@@ -185,7 +185,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    int waw = wa.right - wa.left, wah = wa.bottom - wa.top;
    int w = 600, h = 400;
 
-   int x = waw;// (waw - w) / 2;
+   int x = (waw - w) / 2;
+   //int x = waw;
    int y = (wah - h) / 2;
 
    hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
