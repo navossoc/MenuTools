@@ -41,11 +41,7 @@ using PositioningCfgs = std::vector<PositioningCfg>;
 struct ScreenWnd;
 
 struct PositioningWnd {
-	PositioningWnd(PositioningCfg& pc, ScreenWnd* sw):_posCfg(pc),_scrWnd(*sw) {
-		screenRect = calcScreenRect();
-		//OffsetRect(&screenRect, -(sw->previewOffset()), 0);
-		previewRect = calcPreviewRect();
-	}
+	PositioningWnd(PositioningCfg& pc, ScreenWnd* sw);
 
 private:
 	PositioningCfg _posCfg;
@@ -65,8 +61,9 @@ public:
 using PositioningWnds = std::vector<PositioningWnd>;
 
 struct ScreenWnd {
-	ScreenWnd(RECT& r, UINT s, UINT po):_scrRect(r), _scrNr(s), _previewOffset(po) {
+	ScreenWnd(RECT& r, UINT s, INT po):_scrRect(r), _scrNr(s), _previewOffset(po) {
 		_prvRect = ScaleRect(_scrRect, F);
+
 	}
 
 	void Paint(PAINTSTRUCT& ps, HDC hDC);
@@ -78,7 +75,7 @@ struct ScreenWnd {
 private:
 
 	UINT _scrNr; ///> Screen Nr
-	UINT _previewOffset = 0; ///> Offset of preview, if multiple previews are available
+	INT _previewOffset = 0; ///> Offset of preview, if multiple previews are available
 	RECT _prvRect; ///> Preview
 	RECT _scrRect; ///> Screen
 	PositioningWnds _posititioningWnds; ///> Positioning Windows
@@ -89,7 +86,7 @@ public:
 	bool empty() { return _posititioningWnds.empty(); }
 
 	PropR<UINT, ScreenWnd, &ScreenWnd::_scrNr> nr = { this };
-	PropR<UINT, ScreenWnd, &ScreenWnd::_previewOffset> previewOffset = { this };
+	PropR<INT, ScreenWnd, &ScreenWnd::_previewOffset> previewOffset = { this };
 	PropR<RECT> pr = { [this]() { return _prvRect; } };
 	PropR<RECT> sr = { [this]() { return _scrRect; } };
 	PropR<LONG> x = { [this]() { return _scrRect.left; } };
@@ -131,6 +128,12 @@ void ScreenWnd::Paint(PAINTSTRUCT& ps, HDC hDC)
 	}
 }
 
+PositioningWnd::PositioningWnd(PositioningCfg& pc, ScreenWnd* sw) :_posCfg(pc), _scrWnd(*sw) {
+	screenRect = calcScreenRect();
+	previewRect = calcPreviewRect();
+	OffsetRect(&screenRect, -(sw->previewOffset()), 0);
+}
+
 RECT PositioningWnd::calcScreenRect()
 {
 	PositioningCfg& pc = _posCfg;
@@ -145,6 +148,7 @@ RECT PositioningWnd::calcScreenRect()
 	return r;
 
 }
+
 
 RECT PositioningWnd::calcPreviewRect()
 {
