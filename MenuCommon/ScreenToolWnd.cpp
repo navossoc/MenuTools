@@ -31,10 +31,10 @@ RECT ScaleRect(RECT& in, FLOAT f);
 
 
 struct PositioningCfg {
-	int scr; // screen 0 = all, 1 = first, 2 = second, ...
-	wstring n; // name
+	int monNr, prvNr; //monitor 0 = all, 1 = first, screen 0 = all, 1 = first, 2 = second, ...
+	wstring name; // name
 	int x, y, w, h; // left, top, width, height in % from screen
-	double f = 1;
+	double prvFactor = 1; // preview factor, to scale the preview against the real size
 };
 using PositioningCfgs = std::vector<PositioningCfg>;
 
@@ -61,7 +61,12 @@ public:
 using PositioningWnds = std::vector<PositioningWnd>;
 
 struct ScreenWnd {
-	ScreenWnd(RECT& r, UINT s, INT po):_scrRect(r), _scrNr(s), _previewOffset(po) {
+	ScreenWnd(RECT& r, UINT s, UINT p, INT po)
+		:_scrRect(r)
+		, _scrNr(s)
+		, _prvNr(p)
+		, _previewOffset(po)
+	{
 		_prvRect = ScaleRect(_scrRect, F);
 
 	}
@@ -75,6 +80,7 @@ struct ScreenWnd {
 private:
 
 	UINT _scrNr; ///> Screen Nr
+	UINT _prvNr; ///> Preview Nr
 	INT _previewOffset = 0; ///> Offset of preview, if multiple previews are available
 	RECT _prvRect; ///> Preview
 	RECT _scrRect; ///> Screen
@@ -85,7 +91,7 @@ private:
 public:
 	bool empty() { return _posititioningWnds.empty(); }
 
-	PropR<UINT, ScreenWnd, &ScreenWnd::_scrNr> nr = { this };
+	PropR<UINT, ScreenWnd, &ScreenWnd::_scrNr> prvNr = { this };
 	PropR<INT, ScreenWnd, &ScreenWnd::_previewOffset> previewOffset = { this };
 	PropR<RECT> pr = { [this]() { return _prvRect; } };
 	PropR<RECT> sr = { [this]() { return _scrRect; } };
@@ -158,8 +164,8 @@ RECT PositioningWnd::calcPreviewRect()
 	int w = r.right - r.left;
 	int h = r.bottom - r.top;
 
-	int ix = static_cast<int>(((w * 1.0) - (w * pc.f)) / 2.0);
-	int iy = static_cast<int>(((h * 1.0) - (h * pc.f)) / 2.0);
+	int ix = static_cast<int>(((w * 1.0) - (w * pc.prvFactor)) / 2.0);
+	int iy = static_cast<int>(((h * 1.0) - (h * pc.prvFactor)) / 2.0);
 	InflateRect(&r, -ix, -iy);
 
 	r = ScaleRect(r, F);	
@@ -286,26 +292,26 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	static UINT NP = 2; // Number of previews
 	
 	//std::vector<RECT> scrRects;
-
+	// MonNr, PrvNr, Name, Left%, Top%, Width%, Height%
 	PositioningCfgs winPositions = {
-		{ 1, L"Left TwoThirds", 3, 3, 62, 94 },
-		{ 1, L"Right Third", 68, 3, 30, 94 },
-		{ 1, L"Big Center", 7, 7, 90, 90, 0.8 },
+		{1, 1, L"Left TwoThirds", 3, 3, 62, 94 },
+		{1, 1, L"Right Third", 68, 3, 30, 94 },
+		{1, 1, L"Big Center", 7, 7, 90, 90, 0.8 },
 
-		{ 2, L"Left Third", 3, 3, 30, 94 },
-		{ 2, L"Right TwoThirds", 36, 3, 62, 94 },
-		{ 2, L"Small Center", 20, 20, 60, 60, 0.8 },
+		{1, 2, L"Left Third", 3, 3, 30, 94 },
+		{1, 2, L"Right TwoThirds", 36, 3, 62, 94 },
+		{1, 2, L"Small Center", 20, 20, 60, 60, 0.8 },
 
-		{ 2, L"Left Half", 3, 3, 46, 94, 0.8 },
-		{ 2, L"Right Half", 52, 3, 46, 94, 0.8 },
+		{1, 2, L"Left Half", 3, 3, 46, 94, 0.8 },
+		{1, 2, L"Right Half", 52, 3, 46, 94, 0.8 },
 
-		{ 1, L"Top Left", 3, 3, 42, 42, 0.8 },
-		{ 1, L"Top Right", 56, 3, 42, 42, 0.8 },
-		{ 1, L"Bottom Left", 3, 56, 42, 42, 0.8 },
-		{ 1, L"Bottom Right", 56, 56, 42, 42, 0.8 },
+		{1, 1, L"Top Left", 3, 3, 42, 42, 0.8 },
+		{1, 1, L"Top Right", 56, 3, 42, 42, 0.8 },
+		{1, 1, L"Bottom Left", 3, 56, 42, 42, 0.8 },
+		{1, 1, L"Bottom Right", 56, 56, 42, 42, 0.8 },
 
-		{ 4, L"Top Half", 3, 3, 94, 46 },
-		{ 4, L"Bottom Half", 3, 52, 94, 46 },
+		{2, 2, L"Top Half", 3, 3, 94, 46 },
+		{2, 2, L"Bottom Half", 3, 52, 94, 46 },
 
 		//{ 2, L"Top TwoThirds", 3, 3, 94, 62 },
 		//{ 2, L"Bottom Third", 3, 68, 94, 30 },
@@ -314,37 +320,53 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		//{ 2, L"Bottom TwoThirds", 3, 36, 94, 62 },
 
 
-		{ 3, L"Right 1", 5, 03, 90, 15 },
-		{ 3, L"Right 2", 5, 19, 90, 15 }
+		{2, 1, L"Right 1", 5, 03, 90, 15 },
+		{2, 1, L"Right 2", 5, 19, 90, 15 }
 		//{ 2, L"Right 3", 5, 35, 90, 15 },
 		//{ 2, L"Right 4", 5, 51, 90, 15 },
 		//{ 2, L"Right 5", 5, 67, 90, 15 },
 		//{ 2, L"Right 6", 5, 83, 90, 15 },
 	};
 
-	LONG ox = 0, oy = 0; // offset
-	for (RECT& sr : mInfos) // clac offset from different screens
-	{
-		ox = std::min(sr.left, ox);
-		oy = std::min(sr.top, oy);
-	}
+	using std::views::transform;
+	//using std::views::filter;
+	using std::ranges::min;
+	using std::ranges::max;
+
+	 // clac offset from different screens
+	LONG ox = min(mInfos | transform([](const RECT& r) {return r.left; }));
+	LONG oy = min(mInfos | transform([](const RECT& r) {return r.top; }));
+
+
+	
+	//std::ranges::
+	//LONG ox = *min_element(lefts), oy = 0; // offset
+	//for (RECT& sr : mInfos)
+	//{
+	//	ox = std::min(sr.left, ox);
+	//	oy = std::min(sr.top, oy);
+	//}
 
 	UINT bo = 0; // base offset
-	UINT nr = 0;
-	for (RECT r : mInfos)
+	for (size_t mi = 0; mi < mInfos.size(); ++mi)
 	{
+		RECT r = mInfos[mi];
 		UINT w = r.right - r.left;
 		OffsetRect(&r, bo, 0);
 		bo = w * (NP - 1);
-		for (UINT i = 0; i < NP; ++i)
+
+		auto wps = filter(winPositions, [mi](const PositioningCfg& pc) { return mi == pc.monNr; });
+		UINT np = max(transform(wps, [](const PositioningCfg& cfg) {return cfg.prvNr; }));
+
+		for (UINT pi = 0; pi < np; ++pi)
 		{
 			RECT ri = r;
-			OffsetRect(&ri, w * i, 0);
+			OffsetRect(&ri, w * pi, 0);
 			OffsetRect(&ri, -ox, -oy);
 
-			ScreenWnd sw(ScreenWnd(ri, ++nr, w * i));
+			ScreenWnd sw(ScreenWnd(ri, mi + 1, pi + 1, w * pi));
 
-			for (PositioningCfg& wp : filter(winPositions, [sw](PositioningCfg& wp) { return wp.scr == 0 || wp.scr == sw.nr; })) {
+			for (PositioningCfg& wp : wps | filter([sw](PositioningCfg& wp) { return wp.prvNr == 0 || wp.prvNr == sw.prvNr; })) {
 				sw.push_back(wp);
 			}
 
