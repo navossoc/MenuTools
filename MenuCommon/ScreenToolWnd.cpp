@@ -61,14 +61,14 @@ public:
 using PositioningWnds = std::vector<PositioningWnd>;
 
 struct ScreenWnd {
-	ScreenWnd(RECT& r, UINT s, UINT p, INT po)
-		:_scrRect(r)
-		, _scrNr(s)
+	ScreenWnd(RECT& r, UINT s, UINT p, INT po, POINT so)
+		: _scrRect(r)
+		, _monNr(s)
 		, _prvNr(p)
-		, _previewOffset(po)
+		, _prvOffset(po)
+		, _scrOffset(so)
 	{
 		_prvRect = ScaleRect(_scrRect, F);
-
 	}
 
 	void Paint(PAINTSTRUCT& ps, HDC hDC);
@@ -79,9 +79,10 @@ struct ScreenWnd {
 
 private:
 
-	UINT _scrNr; ///> Screen Nr
+	UINT _monNr; ///> Screen Nr
 	UINT _prvNr; ///> Preview Nr
-	INT _previewOffset = 0; ///> Offset of preview, if multiple previews are available
+	INT _prvOffset = 0; ///> Offset of preview, if multiple previews are available
+	POINT _scrOffset = { 0 }; ///> Offset for screens with different resolution
 	RECT _prvRect; ///> Preview
 	RECT _scrRect; ///> Screen
 	PositioningWnds _posititioningWnds; ///> Positioning Windows
@@ -91,8 +92,10 @@ private:
 public:
 	bool empty() { return _posititioningWnds.empty(); }
 
-	PropR<UINT, ScreenWnd, &ScreenWnd::_scrNr> prvNr = { this };
-	PropR<INT, ScreenWnd, &ScreenWnd::_previewOffset> previewOffset = { this };
+	PropR<UINT, ScreenWnd, &ScreenWnd::_monNr> monNr = { this };
+	PropR<UINT, ScreenWnd, &ScreenWnd::_prvNr> prvNr = { this };
+	PropR<INT, ScreenWnd, &ScreenWnd::_prvOffset> prvOffset = { this };
+	PropR<POINT, ScreenWnd, &ScreenWnd::_scrOffset> scrOffset = { this };
 	PropR<RECT> pr = { [this]() { return _prvRect; } };
 	PropR<RECT> sr = { [this]() { return _scrRect; } };
 	PropR<LONG> x = { [this]() { return _scrRect.left; } };
@@ -137,7 +140,7 @@ void ScreenWnd::Paint(PAINTSTRUCT& ps, HDC hDC)
 PositioningWnd::PositioningWnd(PositioningCfg& pc, ScreenWnd* sw) :_posCfg(pc), _scrWnd(*sw) {
 	screenRect = calcScreenRect();
 	previewRect = calcPreviewRect();
-	OffsetRect(&screenRect, -(sw->previewOffset()), 0);
+	OffsetRect(&screenRect, -(sw->prvOffset()) + sw->scrOffset().x, sw->scrOffset().y);
 }
 
 RECT PositioningWnd::calcScreenRect()
@@ -285,11 +288,10 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		RegisterClassW(wndClass);
 	}
 	_clickPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-	std::vector<RECT> mInfos;
+	std::vector<RECT> monInfos;
 #ifdef _WIN64
-	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&mInfos);
+	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&monInfos);
 #endif
-	static UINT NP = 2; // Number of previews
 	
 	//std::vector<RECT> scrRects;
 	// MonNr, PrvNr, Name, Left%, Top%, Width%, Height%
@@ -333,40 +335,43 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	using std::ranges::min;
 	using std::ranges::max;
 
-	 // clac offset from different screens
-	LONG ox = min(mInfos | transform([](const RECT& r) {return r.left; }));
-	LONG oy = min(mInfos | transform([](const RECT& r) {return r.top; }));
+	 // determine offset from screens with different resolutions
+	LONG ox = min(monInfos | transform([](const RECT& r) {return r.left; }));
+	LONG oy = min(monInfos | transform([](const RECT& r) {return r.top; }));
 
-
-	
-	//std::ranges::
-	//LONG ox = *min_element(lefts), oy = 0; // offset
-	//for (RECT& sr : mInfos)
-	//{
-	//	ox = std::min(sr.left, ox);
-	//	oy = std::min(sr.top, oy);
-	//}
-
-	UINT bo = 0; // base offset
-	for (size_t mi = 0; mi < mInfos.size(); ++mi)
+	// baseOffset means the offset from ScreenWnd if more than one per monitor is shown
+	for (size_t mi = 0, baseOffset = 0; mi < monInfos.size(); ++mi) // monitor-index
 	{
-		RECT r = mInfos[mi];
-		UINT w = r.right - r.left;
-		OffsetRect(&r, bo, 0);
-		bo = w * (NP - 1);
+		auto wps = filter(winPositions, [mi](const PositioningCfg& pc) { return (mi + 1) == pc.monNr; });
+		if(wps.empty())
+			continue;
 
-		auto wps = filter(winPositions, [mi](const PositioningCfg& pc) { return mi == pc.monNr; });
+		// the number of previews for this monitor
 		UINT np = max(transform(wps, [](const PositioningCfg& cfg) {return cfg.prvNr; }));
 
-		for (UINT pi = 0; pi < np; ++pi)
+		RECT monRect = monInfos[mi];
+		UINT monWidth = monRect.right - monRect.left;
+
+		for (UINT pi = 0; pi < np; ++pi) // preview-index
 		{
-			RECT ri = r;
-			OffsetRect(&ri, w * pi, 0);
+			RECT ri = monRect;
+			OffsetRect(&ri, baseOffset, 0);
 			OffsetRect(&ri, -ox, -oy);
 
-			ScreenWnd sw(ScreenWnd(ri, mi + 1, pi + 1, w * pi));
+			ScreenWnd sw(ScreenWnd(ri, mi + 1, pi + 1, baseOffset, { ox, oy }));
 
-			for (PositioningCfg& wp : wps | filter([sw](PositioningCfg& wp) { return wp.prvNr == 0 || wp.prvNr == sw.prvNr; })) {
+			// add the monitor width to the baseOffset
+			baseOffset += monWidth;
+
+			auto belongToScreenWnd = [&sw](PositioningCfg& wp) -> bool
+			{
+				if (wp.monNr == 0 || wp.monNr == sw.monNr)
+					return wp.prvNr == 0 || wp.prvNr == sw.prvNr;
+				else
+					return false;
+			};
+
+			for (PositioningCfg& wp : wps | filter( belongToScreenWnd )) {
 				sw.push_back(wp);
 			}
 
@@ -374,6 +379,8 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 			if (!sw.empty())
 				_screenWnds.push_back(sw);
 		}
+		// remove the last one, to suppress the gap between the monitor previews
+		baseOffset -= monWidth;
 	}
 
 	if (_screenWnds.empty())
