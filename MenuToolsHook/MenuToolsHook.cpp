@@ -17,6 +17,8 @@
 
 extern HINSTANCE hInst;
 
+void InflateWnd(const LONG& diff, const HWND& hWnd);
+
 // Process messages
 LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -125,17 +127,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
 		{
 			LONG diff = wParam == MK_CONTROL ? 10 : -10;
-
-			POINT pt = { 0 };
-			GetCursorPos(&pt);
-			//ScreenToClient(hWnd, &pt);
-			SetCursorPos(pt.x, pt.y - diff);
-
-			//HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
-			RECT r = { 0 };
-			GetWindowRect(hWnd, &r);
-			InflateRect(&r, diff, diff);
-			SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+			InflateWnd(diff, hWnd);
 		}
 		else
 		{
@@ -245,6 +237,20 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 
 	return FALSE;
+}
+
+void InflateWnd(const LONG& diff, const HWND& hWnd)
+{
+	POINT pt = { 0 };
+	GetCursorPos(&pt);
+	//ScreenToClient(hWnd, &pt);
+	SetCursorPos(pt.x, pt.y - diff);
+
+	//HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
+	RECT r = { 0 };
+	GetWindowRect(hWnd, &r);
+	InflateRect(&r, diff, diff);
+	SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
 }
 
 // Sent messages
