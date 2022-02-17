@@ -101,12 +101,12 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					ScreenToolWnd::pWnd.reset();
 					std::thread t([hWnd, wParam]()
 						{
-							Sleep(250);
+							Sleep(500);
 							POINT pt;
 							GetCursorPos(&pt);
 							SHORT ks = GetAsyncKeyState(VK_LBUTTON);
 							log_debug(L"LButton: {} {}, {}",ks,pt.x, pt.y);
-							if (!ks) {
+							if (ks >= 0) {
 								log_debug(L"LButton is up: {}, {}",pt.x, pt.y);
 								POINT& lbd = lastButtonDown;
 								static const LONG TOL = 1;
