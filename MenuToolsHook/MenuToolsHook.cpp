@@ -96,22 +96,36 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				std::wstring exeName = out;
 				std::transform(exeName.begin(), exeName.end(), exeName.begin(), 
 					[](wchar_t c) { return std::tolower(c); } );
-				if (exeName == L"code") 
+				//if (exeName == L"code") 
 				{
-					POINT bu = {
-						GET_X_LPARAM(lParam),
-						GET_Y_LPARAM(lParam)
-					};
-					ScreenToClient(hWnd, &bu);
-					std::thread t([hWnd, wParam, bu]()
+					ScreenToolWnd::pWnd.reset();
+					std::thread t([hWnd, wParam]()
 						{
-							Sleep(100);
-							//PostMessage(hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
+							Sleep(250);
+							POINT pt;
+							GetCursorPos(&pt);
+							SHORT ks = GetAsyncKeyState(VK_LBUTTON);
+							log_debug(L"LButton: {} {}, {}",ks,pt.x, pt.y);
+							if (!ks) {
+								log_debug(L"LButton is up: {}, {}",pt.x, pt.y);
+								POINT& lbd = lastButtonDown;
+								static const LONG TOL = 1;
+								RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
+								if (PtInRect(&tolerance, pt))
+								{
+									log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
+									{
+										if (!dblClick)
+										{
+											PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
+										}
+									}
+								}
+
+							}
 						}
 					);
 					t.detach();
-
-					//return HookProc(hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
 				}
 			}
 		}
@@ -157,7 +171,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		log_debug(L"LButtonUp: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
 
 		//if (millis.count() <= dbl_click)
-		//	return FALSE;
+			return FALSE;
 
 		static const LONG TOL = 1;
 		RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
