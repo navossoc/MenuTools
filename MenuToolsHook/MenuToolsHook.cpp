@@ -13,6 +13,9 @@
 #include "MenuCommon/TrayIcon.h"
 #include "MenuCommon/ScreenToolWnd.h"
 
+#include <Shlwapi.h>
+#pragma comment(lib, "Shlwapi.lib")
+
 #define WM_GETSYSMENU						0x313
 
 extern HINSTANCE hInst;
@@ -72,6 +75,45 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				GET_Y_LPARAM(lParam)
 			};
 			log_debug(L"LButtonDown: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+
+			TCHAR buffer[MAX_PATH] = { 0 };
+			TCHAR* out;
+			DWORD bufSize = sizeof(buffer) / sizeof(*buffer);
+
+			// Get the fully-qualified path of the executable
+			if (GetModuleFileName(NULL, buffer, bufSize) < bufSize)
+			{
+				// now buffer = "c:\whatever\yourexecutable.exe"
+
+				// Go to the beginning of the file name
+				out = PathFindFileName(buffer);
+				// now out = "yourexecutable.exe"
+
+				// Set the dot before the extension to 0 (terminate the string there)
+				*(PathFindExtension(out)) = 0;
+				// now out = "yourexecutable"
+
+				std::wstring exeName = out;
+				std::transform(exeName.begin(), exeName.end(), exeName.begin(), 
+					[](wchar_t c) { return std::tolower(c); } );
+				if (exeName == L"code") 
+				{
+					POINT bu = {
+						GET_X_LPARAM(lParam),
+						GET_Y_LPARAM(lParam)
+					};
+					ScreenToClient(hWnd, &bu);
+					std::thread t([hWnd, wParam, bu]()
+						{
+							Sleep(100);
+							//PostMessage(hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
+						}
+					);
+					t.detach();
+
+					//return HookProc(hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
+				}
+			}
 		}
 		else
 		{
@@ -91,7 +133,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			GET_Y_LPARAM(lParam)
 		};
 		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
-		double dbl_click = GetDoubleClickTime();
+		//double dbl_click = GetDoubleClickTime();
 
 		log_debug(L"LButtonDblClick: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
 		break;
