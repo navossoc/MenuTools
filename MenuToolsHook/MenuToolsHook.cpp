@@ -13,9 +13,14 @@
 #include "MenuCommon/TrayIcon.h"
 #include "MenuCommon/ScreenToolWnd.h"
 
+#include <Shlwapi.h>
+#pragma comment(lib, "Shlwapi.lib")
+
 #define WM_GETSYSMENU						0x313
 
 extern HINSTANCE hInst;
+
+void InflateWnd(const LONG& diff, const HWND& hWnd);
 
 // Process messages
 LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -70,6 +75,59 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				GET_Y_LPARAM(lParam)
 			};
 			log_debug(L"LButtonDown: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+
+			TCHAR buffer[MAX_PATH] = { 0 };
+			TCHAR* out;
+			DWORD bufSize = sizeof(buffer) / sizeof(*buffer);
+
+			// Get the fully-qualified path of the executable
+			if (GetModuleFileName(NULL, buffer, bufSize) < bufSize)
+			{
+				// now buffer = "c:\whatever\yourexecutable.exe"
+
+				// Go to the beginning of the file name
+				out = PathFindFileName(buffer);
+				// now out = "yourexecutable.exe"
+
+				// Set the dot before the extension to 0 (terminate the string there)
+				*(PathFindExtension(out)) = 0;
+				// now out = "yourexecutable"
+
+				std::wstring exeName = out;
+				std::transform(exeName.begin(), exeName.end(), exeName.begin(), 
+					[](wchar_t c) { return std::tolower(c); } );
+				//if (exeName == L"code") 
+				{
+					ScreenToolWnd::pWnd.reset();
+					std::thread t([hWnd, wParam]()
+						{
+							Sleep(500);
+							POINT pt;
+							GetCursorPos(&pt);
+							SHORT ks = GetAsyncKeyState(VK_LBUTTON);
+							log_debug(L"LButton: {} {}, {}",ks,pt.x, pt.y);
+							if (ks >= 0) {
+								log_debug(L"LButton is up: {}, {}",pt.x, pt.y);
+								POINT& lbd = lastButtonDown;
+								static const LONG TOL = 1;
+								RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
+								if (PtInRect(&tolerance, pt))
+								{
+									log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
+									{
+										if (!dblClick)
+										{
+											PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
+										}
+									}
+								}
+
+							}
+						}
+					);
+					t.detach();
+				}
+			}
 		}
 		else
 		{
@@ -89,7 +147,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			GET_Y_LPARAM(lParam)
 		};
 		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
-		double dbl_click = GetDoubleClickTime();
+		//double dbl_click = GetDoubleClickTime();
 
 		log_debug(L"LButtonDblClick: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
 		break;
@@ -113,7 +171,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		log_debug(L"LButtonUp: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
 
 		//if (millis.count() <= dbl_click)
-		//	return FALSE;
+			return FALSE;
 
 		static const LONG TOL = 1;
 		RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
@@ -125,17 +183,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
 		{
 			LONG diff = wParam == MK_CONTROL ? 10 : -10;
-
-			POINT pt = { 0 };
-			GetCursorPos(&pt);
-			//ScreenToClient(hWnd, &pt);
-			SetCursorPos(pt.x, pt.y - diff);
-
-			//HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
-			RECT r = { 0 };
-			GetWindowRect(hWnd, &r);
-			InflateRect(&r, diff, diff);
-			SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+			InflateWnd(diff, hWnd);
 		}
 		else
 		{
@@ -245,6 +293,20 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 
 	return FALSE;
+}
+
+void InflateWnd(const LONG& diff, const HWND& hWnd)
+{
+	POINT pt = { 0 };
+	GetCursorPos(&pt);
+	//ScreenToClient(hWnd, &pt);
+	SetCursorPos(pt.x, pt.y - diff);
+
+	//HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
+	RECT r = { 0 };
+	GetWindowRect(hWnd, &r);
+	InflateRect(&r, diff, diff);
+	SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
 }
 
 // Sent messages

@@ -7,6 +7,7 @@
 // Window information
 LONG wndOldWidth = -1;
 LONG wndOldHeight = -1;
+extern void InflateWnd(const LONG& diff, const HWND& hWnd);
 
 BOOL MenuTools::Install(HWND hWnd)
 {
@@ -27,6 +28,12 @@ BOOL MenuTools::Install(HWND hWnd)
 	{
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_CLOSE_WIN_POS, _T("&Close Positioning-Window"));
 	}
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_INC_WIN_SIZE))
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_INC_WIN_SIZE, _T("&Inc Size of Window"));
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_DEC_WIN_SIZE))
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_DEC_WIN_SIZE, _T("&Dec Size of Window"));
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_PRIORITY))
 	{
@@ -94,6 +101,13 @@ BOOL MenuTools::Uninstall(HWND hWnd)
 	{
 		bSuccess = FALSE;
 	}
+
+	if (!DeleteMenu(hMenuSystem, MT_MENU_INC_WIN_SIZE, MF_BYCOMMAND))
+		bSuccess = FALSE;
+
+	if (!DeleteMenu(hMenuSystem, MT_MENU_DEC_WIN_SIZE, MF_BYCOMMAND))
+		bSuccess = FALSE;
+
 	if (!DeleteMenu(hMenuSystem, MT_MENU_ALWAYS_ON_TOP, MF_BYCOMMAND))
 	{
 		bSuccess = FALSE;
@@ -351,6 +365,18 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	case MT_MENU_CLOSE_WIN_POS:
 	{
 		ScreenToolWnd::pWnd.reset();
+		return TRUE;
+	}
+
+	case MT_MENU_INC_WIN_SIZE:
+	{
+		InflateWnd(10, hWnd);
+		return TRUE;
+	}
+
+	case MT_MENU_DEC_WIN_SIZE:
+	{
+		InflateWnd(-10, hWnd);
 		return TRUE;
 	}
 

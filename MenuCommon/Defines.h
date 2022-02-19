@@ -2,6 +2,9 @@
 #include <string>
 #include <format>
 #include <sstream>
+#include <functional>
+
+using std::function;
 using std::wstring;
 
 // Debug
@@ -41,6 +44,8 @@ using std::wstring;
 #define MT_MENU_SEPARATOR					WM_USER + 0x2030
 #define MT_MENU_OPEN_WIN_POS				WM_USER + 0x2040
 #define MT_MENU_CLOSE_WIN_POS				WM_USER + 0x2050
+#define MT_MENU_INC_WIN_SIZE				WM_USER + 0x2060
+#define MT_MENU_DEC_WIN_SIZE				WM_USER + 0x2070
 
 // Menu -> Priority
 #define MT_MENU_PRIORITY_REALTIME		WM_USER + 0x2110
@@ -189,3 +194,121 @@ bool is_one_of(T t, Tx p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8, P9 p
 	return t == p1 || t == p2 || t == p3 || t == p4 || t == p5 || t == p6 || t == p7 || t == p8 || t == p9;
 }
 */
+
+template<class T> struct Nothing { T nothing_; };
+
+template<class T, class HostT = Nothing<T>, T HostT::* member = &Nothing<T>::nothing_>
+struct PropR
+{
+	using Getter = function<T()>;
+	using Type = T;
+
+	PropR() {}
+	PropR(Getter g) : getter_(g) {}
+	PropR(HostT* host)
+	{
+		getter_ = [host]()
+		{
+			return (*host).*member;
+		};
+	}
+	PropR(const T& m)
+	{
+		getter_ = [m]()
+		{
+			return m;
+		};
+	}
+
+	inline operator T ()
+	{
+		return getter_();
+	}
+	inline operator const T() const
+	{
+		return getter_();
+	}
+
+	inline T* operator & ()
+	{
+		return getter_();
+	}
+	inline const T* operator & () const
+	{
+		return getter_();
+	}
+
+	inline T* operator -> ()
+	{
+		return getter_();
+	}
+	inline const T* operator -> () const
+	{
+		return getter_();
+	}
+
+	inline T operator () ()
+	{
+		return getter_();
+	}
+	inline const T operator () () const
+	{
+		return getter_();
+	}
+
+	inline T get()
+	{
+		return getter_();
+	}
+	//wstring str() const
+	//{
+	//	return std::to_string(static_cast<T>(getter_()));
+	//}
+	//template<typename R>
+	//T operator = (const R& m)
+	//{
+	//	static_assert(0, "bullshit!");
+	//}
+	template<typename R> inline bool operator == (const R& r) { return getter_() == r; }
+	template<typename R> inline bool operator != (const R& r) { return getter_() != r; }
+	template<typename R> inline bool operator < (const R& r) { return less_compare(getter_(), r); }
+	template<typename R> inline bool operator > (const R& r) { return greater_compare(getter_(), r); }
+	template<typename R> inline bool operator <= (const R& r) { return *this == r || *this < r; }
+	template<typename R> inline bool operator >= (const R& r) { return *this == r || *this > r; }
+
+protected:
+	Getter getter_;
+};
+template<class T, class HostT, T HostT::* member>
+struct PropRW : public PropR<T, HostT, member>
+{
+	using Setter = function<T(const T&)>;
+	PropRW() : PropR() {}
+	PropRW(HostT* host) : PropR<T, HostT, member>(host)
+	{
+		setter_ = [host](const T& m)
+		{
+			return (host->*member) = m;
+		};
+	}
+	T operator = (const T& m)
+	{
+		return setter_(m);
+	}
+private:
+	Setter setter_;
+};
+
+//template<typename L, class R, class H, R H::* m>
+//bool operator == (const L& l, const PropR<R, H, m>& r) { return l == r.operator R(); }
+//template<typename L, class R, class H, R H::* m>
+//bool operator != (const L& l, const PropR<R, H, m>& r) { return l != r.operator R(); }
+//template<typename L, class R, class H, R H::* m>
+//bool operator < (const L& l, const PropR<R, H, m>& r) { return less_compare(l, r.operator R()); }
+//template<typename L, class R, class H, R H::* m>
+//bool operator > (const L& l, const PropR<R, H, m>& r) { return greater_compare(l, r.operator R()); }
+//template<typename L, class R, class H, R H::* m>
+//bool operator <= (const L& l, const PropR<R, H, m>& r) { return l == r || l < r; }
+//template<typename L, class R, class H, R H::* m>
+//bool operator >= (const L& l, const PropR<R, H, m>& r) { return l == r || l > r; }
+//
