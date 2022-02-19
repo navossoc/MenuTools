@@ -296,16 +296,16 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	//std::vector<RECT> scrRects;
 	// MonNr, PrvNr, Name, Left%, Top%, Width%, Height%
 	PositioningCfgs winPositions = {
-		{1, 1, L"Left TwoThirds", 3, 3, 62, 94 },
-		{1, 1, L"Right Third", 68, 3, 30, 94 },
-		{1, 1, L"Big Center", 7, 7, 90, 90, 0.8 },
+		{1, 1, L"Left TwoThirds", 2, 2, 65, 96 },
+		{1, 1, L"Right Third", 67, 2, 31, 96 },
+		{1, 1, L"Big Center", 2, 2, 96, 96, 0.7 },
 
-		{1, 2, L"Left Third", 3, 3, 30, 94 },
-		{1, 2, L"Right TwoThirds", 36, 3, 62, 94 },
-		{1, 2, L"Small Center", 20, 20, 60, 60, 0.8 },
+		{1, 2, L"Left Third", 2, 2, 35, 96 },
+		{1, 2, L"Right TwoThirds", 37, 3, 61, 94 },
+		{1, 2, L"Small Center", 15, 15, 70, 70, 0.7 },
 
-		{1, 2, L"Left Half", 3, 3, 46, 94, 0.8 },
-		{1, 2, L"Right Half", 52, 3, 46, 94, 0.8 },
+		{1, 2, L"Left Half", 2, 2, 49, 96, 0.8 },
+		{1, 2, L"Right Half", 51, 2, 49, 96, 0.8 },
 
 		{1, 1, L"Top Left", 3, 3, 42, 42, 0.8 },
 		{1, 1, L"Top Right", 56, 3, 42, 42, 0.8 },
