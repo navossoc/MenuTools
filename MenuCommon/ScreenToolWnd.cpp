@@ -296,13 +296,15 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	//std::vector<RECT> scrRects;
 	// MonNr, PrvNr, Name, Left%, Top%, Width%, Height%
 	PositioningCfgs winPositions = {
-		{1, 1, L"Left TwoThirds", 2, 2, 65, 96 },
-		{1, 1, L"Right Third", 67, 2, 31, 96 },
-		{1, 1, L"Big Center", 2, 2, 96, 96, 0.7 },
+		{1, 1, L"Left TwoThirds", 3, 6, 64, 92 },
+		{1, 1, L"Right Third", 67, 6, 31, 92 },
 
-		{1, 2, L"Left Third", 2, 2, 35, 96 },
-		{1, 2, L"Right TwoThirds", 37, 3, 61, 94 },
-		{1, 2, L"Small Center", 15, 15, 70, 70, 0.7 },
+		{1, 1, L"Small Wide Center", 15, 15, 70, 70, 0.7 },
+
+		{1, 2, L"Left Third", 3, 6, 31, 92 },
+		{1, 2, L"Right TwoThirds", 34, 6, 64, 92 },
+
+		{1, 2, L"Big Wide Center", 3, 6, 95, 92, 0.7 },
 
 		{1, 2, L"Left Half", 2, 2, 49, 96, 0.8 },
 		{1, 2, L"Right Half", 51, 2, 49, 96, 0.8 },
@@ -312,23 +314,28 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		{1, 1, L"Bottom Left", 3, 56, 42, 42, 0.8 },
 		{1, 1, L"Bottom Right", 56, 56, 42, 42, 0.8 },
 
-		{2, 2, L"Top Half", 3, 3, 94, 46 },
-		{2, 2, L"Bottom Half", 3, 52, 94, 46 },
+		{2, 2, L"Top Half", 6, 3, 92, 46 },
+		{2, 2, L"Bottom Half", 6, 52, 92, 46 },
 
-		//{ 2, L"Top TwoThirds", 3, 3, 94, 62 },
-		//{ 2, L"Bottom Third", 3, 68, 94, 30 },
+		{2, 2, L"Big Height Center TwoThirds", 6, 4, 92, 95, 1.05 },
 
-		//{ 2, L"Top Third", 3, 3, 94, 30 },
-		//{ 2, L"Bottom TwoThirds", 3, 36, 94, 62 },
+		{2, 2, L"Top TwoThirds", 6, 3, 92, 65 , 0.9 },
+		{2, 2, L"Bottom Third", 6, 68, 92, 30 , 0.9 },
+		{2, 1, L"Top Third", 6, 3, 92, 30, 1.05},
+		{2, 1, L"Bottom TwoThirds", 6, 33, 92, 65, 1.05 },
 
 
-		{ 2, 1, L"Right 1", 5, 03, 90, 15 },
-		{ 2, 1, L"Right 2", 5, 19, 90, 15 },
-		{ 2, 1, L"Right 3", 5, 35, 90, 15 },
-		{ 2, 1, L"Right 4", 5, 51, 90, 15 },
-		{ 2, 1, L"Right 5", 5, 67, 90, 15 },
-		{ 2, 1, L"Right 6", 5, 83, 90, 15 }
-	};
+		{2, 1, L"Right 1", 6, 03, 92, 10, 0.9 },
+		{2, 1, L"Right 2", 6, 15, 92, 10, 0.9 },
+		{2, 1, L"Right 3", 6, 27, 92, 10, 0.9 },
+		{2, 1, L"Right 4", 6, 39, 92, 10, 0.9 },
+		{2, 1, L"Right 5", 6, 51, 92, 10, 0.9 },
+		{2, 1, L"Right 6", 6, 63, 92, 10, 0.9 },
+		{2, 1, L"Right 7", 6, 75, 92, 10, 0.9 },
+		{2, 1, L"Right 8", 6, 87, 92, 10, 0.9 },
+
+		{2, 1, L"Small Height Center TwoThirds", 15, 15, 70, 70, 0.7 }
+};
 
 	using std::views::transform;
 	//using std::views::filter;
