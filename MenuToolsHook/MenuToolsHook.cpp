@@ -76,58 +76,68 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			};
 			log_debug(L"LButtonDown: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 
-			TCHAR buffer[MAX_PATH] = { 0 };
-			TCHAR* out;
-			DWORD bufSize = sizeof(buffer) / sizeof(*buffer);
-
-			// Get the fully-qualified path of the executable
-			if (GetModuleFileName(NULL, buffer, bufSize) < bufSize)
+			BYTE ks = HIBYTE(GetAsyncKeyState(VK_CONTROL) + GetAsyncKeyState(VK_SHIFT));
+			if(!ks)
+			//if (!is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
 			{
-				// now buffer = "c:\whatever\yourexecutable.exe"
+				TCHAR buffer[MAX_PATH] = { 0 };
+				TCHAR* out;
+				DWORD bufSize = sizeof(buffer) / sizeof(*buffer);
 
-				// Go to the beginning of the file name
-				out = PathFindFileName(buffer);
-				// now out = "yourexecutable.exe"
-
-				// Set the dot before the extension to 0 (terminate the string there)
-				*(PathFindExtension(out)) = 0;
-				// now out = "yourexecutable"
-
-				std::wstring exeName = out;
-				std::transform(exeName.begin(), exeName.end(), exeName.begin(), 
-					[](wchar_t c) { return std::tolower(c); } );
-				//if (exeName == L"code") 
+				// Get the fully-qualified path of the executable
+				if (GetModuleFileName(NULL, buffer, bufSize) < bufSize)
 				{
-					ScreenToolWnd::pWnd.reset();
-					std::thread t([hWnd, wParam]()
+					// now buffer = "c:\whatever\yourexecutable.exe"
+
+					// Go to the beginning of the file name
+					out = PathFindFileName(buffer);
+					// now out = "yourexecutable.exe"
+
+					// Set the dot before the extension to 0 (terminate the string there)
+					*(PathFindExtension(out)) = 0;
+					// now out = "yourexecutable"
+
+					std::wstring exeName = out;
+					std::transform(exeName.begin(), exeName.end(), exeName.begin(),
+						[](wchar_t c) { return std::tolower(c); });
+					//if (exeName == L"code") 
+					{
+						if (ScreenToolWnd::pWnd)
 						{
-							Sleep(500);
-							POINT pt;
-							GetCursorPos(&pt);
-							SHORT ks = GetAsyncKeyState(VK_LBUTTON);
-							log_debug(L"LButton: {} {}, {}",ks,pt.x, pt.y);
-							if (ks >= 0) {
-								log_debug(L"LButton is up: {}, {}",pt.x, pt.y);
-								POINT& lbd = lastButtonDown;
-								static const LONG TOL = 1;
-								RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
-								if (PtInRect(&tolerance, pt))
-								{
-									log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
+							ScreenToolWnd::pWnd.reset();
+							return FALSE;
+						}
+						std::thread t([hWnd, wParam]()
+							{
+								Sleep(500);
+								POINT pt;
+								GetCursorPos(&pt);
+								BYTE ks = HIBYTE(GetAsyncKeyState(VK_LBUTTON));
+								log_debug(L"LButton: {} {}, {}", ks, pt.x, pt.y);
+								if (ks >= 0) {
+									log_debug(L"LButton is up: {}, {}", pt.x, pt.y);
+									POINT& lbd = lastButtonDown;
+									static const LONG TOL = 1;
+									RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
+									if (PtInRect(&tolerance, pt))
 									{
-										if (!dblClick)
+										log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
 										{
-											PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
+											if (!dblClick)
+											{
+												PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
+											}
 										}
 									}
-								}
 
+								}
 							}
-						}
-					);
-					t.detach();
+						);
+						t.detach();
+					}
 				}
 			}
+
 		}
 		else
 		{
@@ -159,26 +169,26 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 		POINT& lbd = lastButtonDown;
-		POINT bu = {
-			GET_X_LPARAM(lParam),
-			GET_Y_LPARAM(lParam)
-		};
-		ClientToScreen(hWnd, &bu);
+		//POINT bu = {
+		//	GET_X_LPARAM(lParam),
+		//	GET_Y_LPARAM(lParam)
+		//};
+		//ClientToScreen(hWnd, &bu);
 
 		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
-		double dbl_click = GetDoubleClickTime();
+		//double dbl_click = GetDoubleClickTime();
 
 		log_debug(L"LButtonUp: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
 
 		//if (millis.count() <= dbl_click)
-			return FALSE;
+			//return FALSE;
 
-		static const LONG TOL = 1;
-		RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
-		if (!PtInRect(&tolerance, bu))
-		{
-			return FALSE;
-		}
+		//static const LONG TOL = 1;
+		//RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
+		//if (!PtInRect(&tolerance, bu))
+		//{
+		//	return FALSE;
+		//}
 
 		if (is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
 		{
@@ -187,36 +197,36 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else
 		{
-			wParam = SendMessage(hWnd, WM_NCHITTEST, wParam, lParam);
+			//wParam = SendMessage(hWnd, WM_NCHITTEST, wParam, lParam);
 
-			// Title bar
-			if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
-			{
-				log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
-				if (ScreenToolWnd::pWnd)
-				{
-					ScreenToolWnd::pWnd.reset();
-				}
-				else
-				{
-					/*PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));*/
-					//std::async(std::launch::async, [hWnd, wParam, bu]()
-					std::thread t([hWnd, wParam, bu]()
-						{
-							Sleep(100);
-							if (!dblClick) 
-							{
-								PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));
-								//ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
-							}
-						}
-					);
-					t.detach();
-					//if (SendMessage(hWnd, WM_NCHITTEST, wParam, MAKELPARAM(bu.x, bu.y)) == HTCAPTION)
-					//if (!dblClick)
-					//	ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
-				}
-			}
+			//// Title bar
+			//if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
+			//{
+			//	log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
+			//	if (ScreenToolWnd::pWnd)
+			//	{
+			//		ScreenToolWnd::pWnd.reset();
+			//	}
+			//	else
+			//	{
+			//		/*PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));*/
+			//		//std::async(std::launch::async, [hWnd, wParam, bu]()
+			//		std::thread t([hWnd, wParam, bu]()
+			//			{
+			//				Sleep(100);
+			//				if (!dblClick) 
+			//				{
+			//					PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));
+			//					//ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
+			//				}
+			//			}
+			//		);
+			//		t.detach();
+			//		//if (SendMessage(hWnd, WM_NCHITTEST, wParam, MAKELPARAM(bu.x, bu.y)) == HTCAPTION)
+			//		//if (!dblClick)
+			//		//	ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
+			//	}
+			//}
 		}
 
 		return FALSE;
@@ -297,16 +307,46 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void InflateWnd(const LONG& diff, const HWND& hWnd)
 {
+	WINDOWPLACEMENT wp = { sizeof(WINDOWPLACEMENT) };
+	GetWindowPlacement(hWnd, &wp);
+	if (wp.showCmd == SW_MAXIMIZE && diff > 0)
+		return;
+
+	RECT wr = { 0 };
+	GetWindowRect(hWnd, &wr);
+	InflateRect(&wr, diff, diff);
+
+	//auto width = r.right - r.left;
+	auto height = wr.bottom - wr.top;
+
+	auto captionHeight = GetSystemMetrics(SM_CYCAPTION);
+	if (height <= captionHeight)
+		return;
+
+	HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+	MONITORINFO mi = { sizeof(MONITORINFO) };
+	GetMonitorInfo(hMon, &mi);
+	auto mr = mi.rcWork;
+	if (height >= (mr.bottom - mr.top))
+	{
+		wp.showCmd = SW_MAXIMIZE;
+		SetWindowPlacement(hWnd, &wp);
+		return;
+	}
+
 	POINT pt = { 0 };
 	GetCursorPos(&pt);
 	//ScreenToClient(hWnd, &pt);
 	SetCursorPos(pt.x, pt.y - diff);
 
-	//HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
-	RECT r = { 0 };
-	GetWindowRect(hWnd, &r);
-	InflateRect(&r, diff, diff);
-	SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+
+	wp.rcNormalPosition = wr;
+	wp.showCmd = SW_NORMAL;
+	SetWindowPlacement(hWnd, &wp);
+	//if(wp.showCmd == SW_MAXIMIZE)
+	//ShowWindow(hWnd, SW_NORMAL);
+	//int l = 
+	//SetWindowPos(hWnd, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
 }
 
 // Sent messages
