@@ -406,9 +406,9 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		auto mr = mi.rcWork;
 
 		std::wstring msg = std::format(
-			L"Window (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
-			L"Virtual (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
-			L"Monitor (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
+			L"Window-Size (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
+			L"Virtual-Size (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
+			L"Monitor-Size (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
 			, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top
 			, dr.left, dr.top, dr.right - dr.left, dr.bottom - dr.top
 			, mr.left, mr.top, mr.right - mr.left, mr.bottom - mr.top
