@@ -109,12 +109,30 @@ public:
 		return PtInRect(&_prvRect, pt);
 	}
 
+	bool hit(const RECT& wr) // Window-Rect
+	{
+		return EqualRect(&_scrRect, &wr);
+	}
+
 	PositioningWnd* find(POINT pt)
 	{
 		using std::ranges::find_if;
 
 		auto &pw = _posititioningWnds;
 		if (auto it = find_if(pw.rbegin(), pw.rend(), [pt](PositioningWnd& pw) { return PtInRect(&pw.previewRect, pt); }); it != pw.rend())
+		{
+			return &*it;
+		}
+
+		return nullptr;
+	}
+
+	PositioningWnd* find(const RECT& wr) // Window-Rect
+	{
+		using std::ranges::find_if;
+
+		auto &pw = _posititioningWnds;
+		if (auto it = find_if(pw.rbegin(), pw.rend(), [wr](PositioningWnd& pw) { return EqualRect(&pw.screenRect, &wr); }); it != pw.rend())
 		{
 			return &*it;
 		}
@@ -485,6 +503,21 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	GetCursorPos(&pt);
 	ScreenToClient(hWnd, &pt);
 
+
+	HWND hParent = GetParent(hWnd);
+	RECT wr = {};
+	GetWindowRect(hParent, &wr);
+
+	PositioningWnd* fittingPosWnd = nullptr;
+	for (ScreenWnd& sw : _screenWnds)
+	{
+		if (PositioningWnd* posWnd = sw.find(wr))
+		{
+			fittingPosWnd = posWnd;
+			break;
+		}
+	}
+
 	//LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
 	//LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
 
@@ -555,8 +588,6 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			//ScreenWnd& sw = *_currentScreenWnd;
 
 			RECT wr = _currentPosWnd->screenRect;
-
-			HWND hParent = GetParent(hWnd);
 
 			WINDOWPLACEMENT wp = { sizeof(WINDOWPLACEMENT) };
 			GetWindowPlacement(hParent, &wp);
@@ -753,6 +784,12 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		{
 			FillRect(hDC, &_currentPosWnd->previewRect, GetSysColorBrush(COLOR_ACTIVECAPTION));
 			FrameRect(hDC, &_currentPosWnd->previewRect, GetSysColorBrush(COLOR_HOTLIGHT));
+		}
+
+		if (fittingPosWnd)
+		{
+			FillRect(hDC, &fittingPosWnd->previewRect, GetSysColorBrush(COLOR_ACTIVECAPTION));
+			FrameRect(hDC, &fittingPosWnd->previewRect, GetSysColorBrush(COLOR_HOTLIGHT));
 		}
 
 
