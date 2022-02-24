@@ -328,17 +328,18 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		{1, 2, L"Left Half", 2, 2, 49, 96, 0.8 },
 		{1, 2, L"Right Half", 51, 2, 49, 96, 0.8 },
 
-		{1, 1, L"Top Left", 3, 3, 42, 42, 0.8 },
-		{1, 1, L"Top Right", 56, 3, 42, 42, 0.8 },
-		{1, 1, L"Bottom Left", 3, 56, 42, 42, 0.8 },
-		{1, 1, L"Bottom Right", 56, 56, 42, 42, 0.8 },
+		{1, 1, L"Top Left", 3, 0, 39, 50, 0.8 },
+		{1, 1, L"Top Right", 58, 0, 39, 50, 0.8 },
+		{1, 1, L"Bottom Left", 3, 50, 39, 50, 0.8 },
+		{1, 1, L"Bottom Right", 58, 50, 39, 50, 0.8 },
 
 		{2, 2, L"Big Height Center TwoThirds", 6, 4, 92, 95, 1.05 },
 
-		{2, 2, L"Top TwoThirds", 6, 3, 92, 65 , 0.9 },
-		{2, 2, L"Bottom Third", 6, 68, 92, 30 , 0.9 },
-		{2, 1, L"Top Third", 6, 3, 92, 30, 1.05},
-		{2, 1, L"Bottom TwoThirds", 6, 33, 92, 65, 1.05 },
+		{2, 2, L"Top TwoThirds", 6, 3, 92, 60 , 0.9 },
+		{2, 2, L"Bottom Third", 6, 63, 92, 35 , 0.9 },
+
+		{2, 1, L"Top Third", 6, 3, 92, 35, 1.05},
+		{2, 1, L"Bottom TwoThirds", 6, 38, 92, 60, 1.05 },
 
 		{2, 2, L"Top Half", 6, 3, 92, 46, 0.7 },
 		{2, 2, L"Bottom Half", 6, 52, 92, 46, 0.7 },
