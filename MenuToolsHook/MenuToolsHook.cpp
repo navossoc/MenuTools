@@ -34,6 +34,14 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+	case WM_TIMER:
+	{
+		if (HIBYTE(GetAsyncKeyState(VK_LSHIFT)) && HIBYTE(GetAsyncKeyState(VK_LCONTROL)))
+		{
+			log_debug(L"Thats i!: {}", message);
+		}
+
+	}
 	case WM_CONTEXTMENU:
 	case WM_INITMENU:
 	case WM_INITMENUPOPUP:
