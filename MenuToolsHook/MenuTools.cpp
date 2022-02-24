@@ -361,9 +361,7 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			wr.left + ((wr.right - wr.left) / 2),
 			wr.top + (caption / 2)
 		};
-		PostMessage(hWnd, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
-		ScreenToClient(hWnd, &pt);
-		PostMessage(hWnd, WM_LBUTTONUP, 0, MAKELPARAM(pt.x, pt.y));
+		PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
 		return TRUE;
 	}
 	

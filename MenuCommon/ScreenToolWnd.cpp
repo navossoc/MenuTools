@@ -789,8 +789,8 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 		if (fittingPosWnd)
 		{
-			FillRect(hDC, &fittingPosWnd->previewRect, GetSysColorBrush(COLOR_ACTIVECAPTION));
-			FrameRect(hDC, &fittingPosWnd->previewRect, GetSysColorBrush(COLOR_HOTLIGHT));
+			//FillRect(hDC, &fittingPosWnd->previewRect, GetSysColorBrush(COLOR_ACTIVECAPTION));
+			FrameRect(hDC, &fittingPosWnd->previewRect, GetSysColorBrush(COLOR_WINDOWFRAME));
 		}
 
 
