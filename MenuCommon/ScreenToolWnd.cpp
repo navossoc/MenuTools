@@ -319,31 +319,33 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		{1, 1, L"Left TwoThirds", 3, 6, 64, 92 },
 		{1, 1, L"Right Third", 67, 6, 31, 92 },
 
-		{1, 1, L"Small Wide Center", 15, 15, 70, 70, 0.7 },
+		{1, 1, L"Small Wide Center", 15, 15, 70, 70, 0.8 },
+		{1, 1, L"Mini Wide Center", 25, 25, 50, 50, 0.7 },
 
 		{1, 2, L"Left Third", 3, 6, 31, 92 },
 		{1, 2, L"Right TwoThirds", 34, 6, 64, 92 },
 
-		{1, 2, L"Big Wide Center", 3, 6, 95, 92, 0.7 },
+		{1, 2, L"Big Wide Center", 3, 6, 95, 92, 0.65 },
 
 		{1, 2, L"Left Half", 2, 2, 49, 96, 0.8 },
 		{1, 2, L"Right Half", 51, 2, 49, 96, 0.8 },
 
-		{1, 1, L"Top Left", 3, 0, 39, 50, 0.8 },
-		{1, 1, L"Top Right", 58, 0, 39, 50, 0.8 },
-		{1, 1, L"Bottom Left", 3, 50, 39, 50, 0.8 },
-		{1, 1, L"Bottom Right", 58, 50, 39, 50, 0.8 },
+		{1, 1, L"Top Left", 3, 0, 39, 50, 0.75 },
+		{1, 1, L"Top Right", 58, 0, 39, 50, 0.75 },
+		{1, 1, L"Bottom Left", 3, 50, 39, 50, 0.75 },
+		{1, 1, L"Bottom Right", 58, 50, 39, 50, 0.75 },
 
-		{2, 2, L"Big Height Center TwoThirds", 6, 4, 92, 95, 1.05 },
-
-		{2, 2, L"Top TwoThirds", 6, 3, 92, 60 , 0.9 },
-		{2, 2, L"Bottom Third", 6, 63, 92, 35 , 0.9 },
+		{2, 2, L"Top TwoThirds", 6, 3, 92, 60 , 1 },
+		{2, 2, L"Bottom Third", 6, 63, 92, 35 , 1 },
 
 		{2, 1, L"Top Third", 6, 3, 92, 35, 1.05},
 		{2, 1, L"Bottom TwoThirds", 6, 38, 92, 60, 1.05 },
 
-		{2, 2, L"Top Half", 6, 3, 92, 46, 0.7 },
-		{2, 2, L"Bottom Half", 6, 52, 92, 46, 0.7 },
+		{2, 2, L"Top Half", 6, 3, 92, 46, 0.8 },
+		{2, 2, L"Bottom Half", 6, 52, 92, 46, 0.8 },
+
+
+		{2, 2, L"Big Height Center", 6, 4, 92, 95, 0.65 },
 
 		{2, 1, L"Right 1", 6, 03, 92, 10, 0.9 },
 		{2, 1, L"Right 2", 6, 15, 92, 10, 0.9 },
@@ -354,7 +356,8 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		{2, 1, L"Right 7", 6, 75, 92, 10, 0.9 },
 		{2, 1, L"Right 8", 6, 87, 92, 10, 0.9 },
 
-		{2, 1, L"Small Height Center TwoThirds", 15, 15, 70, 70, 0.7 }
+		{2, 1, L"Small Height Center TwoThirds", 15, 15, 70, 70, 0.7 },
+		{2, 1, L"Mini Height Center", 25, 25, 50, 50, 0.7 }
 };
 
 	using std::views::transform;

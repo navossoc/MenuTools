@@ -19,24 +19,33 @@ BOOL MenuTools::Install(HWND hWnd)
 
 	HMENU hMenuSystem = GetSystemMenu(hWnd, FALSE);
 
-	if (!IsMenuItem(hMenuSystem, MT_MENU_OPEN_WIN_POS))
-	{
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_OPEN_WIN_POS, _T("Open P&ositioning-Window"));
-	}
-
-	if (!IsMenuItem(hMenuSystem, MT_MENU_CLOSE_WIN_POS))
-	{
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_CLOSE_WIN_POS, _T("&Close Positioning-Window"));
-	}
+	//if (!IsMenuItem(hMenuSystem, MT_MENU_CLOSE_WIN_POS))
+	//{
+	//	InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_CLOSE_WIN_POS, _T("&Close Positioning-Window"));
+	//}
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_INC_WIN_SIZE))
+	{
+		//InsertMenu(hMenuSystem, SC_CLOSE, MF_SEPARATOR, 0, NULL);
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_INC_WIN_SIZE, _T("&Inc Size of Window"));
+	}
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_DEC_WIN_SIZE))
+	{
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_DEC_WIN_SIZE, _T("&Dec Size of Window"));
+	}
 
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_OPEN_WIN_POS))
+	{
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_SEPARATOR, 0, NULL);
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_OPEN_WIN_POS, _T("Open P&ositioning-Window"));
+	}
 	if (!IsMenuItem(hMenuSystem, MT_MENU_SHOW_WIN_SIZE))
+	{
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_SHOW_WIN_SIZE, _T("&Show Size of Window"));
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_SEPARATOR, 0, NULL);
+	}
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_PRIORITY))
 	{

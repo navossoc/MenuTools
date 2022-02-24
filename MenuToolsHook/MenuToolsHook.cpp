@@ -32,16 +32,36 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static WPARAM lastHitTest = 0;
 	static bool dblClick = false;
 
+	static const UINT_PTR TIMER_ID = 13578;
+
+	static UINT_PTR timer = NULL;
+	if(!timer)
+		timer = SetTimer(hWnd, TIMER_ID, 300, (TIMERPROC)NULL);
+
+
 	switch (message)
 	{
 	case WM_TIMER:
 	{
-		if (HIBYTE(GetAsyncKeyState(VK_LSHIFT)) && HIBYTE(GetAsyncKeyState(VK_LCONTROL)))
+		if (wParam == TIMER_ID) 
 		{
-			log_debug(L"Thats i!: {}", message);
+			if (HIBYTE(GetAsyncKeyState(VK_LSHIFT)) && HIBYTE(GetAsyncKeyState(VK_LCONTROL)) && HIBYTE(GetAsyncKeyState(0x41)))
+			{
+				log_debug(L"Thats i!: {}", message);
+				RECT wr;
+				GetWindowRect(hWnd, &wr);
+				int caption = GetSystemMetrics(SM_CYCAPTION);
+				POINT pt = {
+					wr.left + ((wr.right - wr.left) / 2),
+					wr.top + (caption / 2)
+				};
+				PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
+			}
+			return TRUE;
 		}
-
+		break;
 	}
+
 	case WM_CONTEXTMENU:
 	case WM_INITMENU:
 	case WM_INITMENUPOPUP:
@@ -84,66 +104,69 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			};
 			log_debug(L"LButtonDown: {}, {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 
+			if (ScreenToolWnd::pWnd)
+			{
+				ScreenToolWnd::pWnd.reset();
+				return TRUE;						
+			}
+
 			BYTE ks = HIBYTE(GetAsyncKeyState(VK_CONTROL) + GetAsyncKeyState(VK_SHIFT));
 			if(!ks)
 			//if (!is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
 			{
-				TCHAR buffer[MAX_PATH] = { 0 };
-				TCHAR* out;
-				DWORD bufSize = sizeof(buffer) / sizeof(*buffer);
-
-				// Get the fully-qualified path of the executable
-				if (GetModuleFileName(NULL, buffer, bufSize) < bufSize)
-				{
-					// now buffer = "c:\whatever\yourexecutable.exe"
-
-					// Go to the beginning of the file name
-					out = PathFindFileName(buffer);
-					// now out = "yourexecutable.exe"
-
-					// Set the dot before the extension to 0 (terminate the string there)
-					*(PathFindExtension(out)) = 0;
-					// now out = "yourexecutable"
-
-					std::wstring exeName = out;
-					std::transform(exeName.begin(), exeName.end(), exeName.begin(),
-						[](wchar_t c) { return std::tolower(c); });
-					//if (exeName == L"code") 
+				POINT lbd = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+				std::thread t([hWnd, wParam, lbd]()
 					{
-						if (ScreenToolWnd::pWnd)
-						{
-							ScreenToolWnd::pWnd.reset();
-							return FALSE;
-						}
-						std::thread t([hWnd, wParam]()
-							{
-								Sleep(500);
-								POINT pt;
-								GetCursorPos(&pt);
-								BYTE ks = HIBYTE(GetAsyncKeyState(VK_LBUTTON));
-								log_debug(L"LButton: {} {}, {}", ks, pt.x, pt.y);
-								if (ks >= 0) {
-									log_debug(L"LButton is up: {}, {}", pt.x, pt.y);
-									POINT& lbd = lastButtonDown;
-									static const LONG TOL = 1;
-									RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
-									if (PtInRect(&tolerance, pt))
-									{
-										log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
-										{
-											if (!dblClick)
-											{
-												PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
-											}
-										}
-									}
+						auto toWait = GetDoubleClickTime();
+						Sleep(toWait);
 
+						POINT pt;
+						GetCursorPos(&pt);
+						if (!HIBYTE(GetAsyncKeyState(VK_LBUTTON))) {
+							log_debug(L"LButton is up: {}, {}", pt.x, pt.y);
+							const LONG XTOL = GetSystemMetrics(SM_CXDOUBLECLK) / 2;
+							const LONG YTOL = GetSystemMetrics(SM_CYDOUBLECLK) / 2;
+							RECT tolerance = { lbd.x - XTOL, lbd.y - YTOL, lbd.x + XTOL, lbd.y + YTOL };
+							if (PtInRect(&tolerance, pt))
+							{
+								log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
+								{
+									if (!dblClick)
+									{
+										PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
+									}
 								}
 							}
-						);
-						t.detach();
+
+						}
 					}
-				}
+				);
+				t.detach();
+
+				//TCHAR buffer[MAX_PATH] = { 0 };
+				//TCHAR* out;
+				//DWORD bufSize = sizeof(buffer) / sizeof(*buffer);
+
+				//// Get the fully-qualified path of the executable
+				//if (GetModuleFileName(NULL, buffer, bufSize) < bufSize)
+				//{
+				//	// now buffer = "c:\whatever\yourexecutable.exe"
+
+				//	// Go to the beginning of the file name
+				//	out = PathFindFileName(buffer);
+				//	// now out = "yourexecutable.exe"
+
+				//	// Set the dot before the extension to 0 (terminate the string there)
+				//	*(PathFindExtension(out)) = 0;
+				//	// now out = "yourexecutable"
+
+				//	std::wstring exeName = out;
+				//	std::transform(exeName.begin(), exeName.end(), exeName.begin(),
+				//		[](wchar_t c) { return std::tolower(c); });
+				//	//if (exeName == L"code") 
+				//	{
+				//	}
+				//}
 			}
 
 		}
