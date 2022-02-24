@@ -19,8 +19,9 @@ namespace
 	const std::wstring CLASS_NAME = L"ScreenToolWnd";
 	WNDCLASSW* wndClass = nullptr;
 
-	static const FLOAT F = 0.1f; // factor
-	static const UINT CLOSE_TIMER = 0x30;
+	const FLOAT F = 0.1f; // factor
+	const UINT CLOSE_TIMER = 0x30;
+	const UINT CLOSE_TIMEOUT = 3500;
 }
 RECT ScaleRect(RECT& in, FLOAT f);
 
@@ -466,7 +467,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		::ShowWindow(_hWnd, SW_SHOW);
 		log_debug(L"ShowWindow, ScreenToolWnd::pWnd: {}", (void*)this);
 
-		SetTimer(_hWnd, CLOSE_TIMER, 5000, (TIMERPROC)NULL);
+		SetTimer(_hWnd, CLOSE_TIMER, CLOSE_TIMEOUT, (TIMERPROC)NULL);
 
 		HMODULE hModDll = GetModuleHandle(BUILD(MT_DLL_NAME));
 		if (hModDll != NULL)
@@ -622,7 +623,7 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 	case WM_MOUSEMOVE:
 	{
-		SetTimer(_hWnd, CLOSE_TIMER, 5000, (TIMERPROC)NULL);
+		SetTimer(_hWnd, CLOSE_TIMER, CLOSE_TIMEOUT, (TIMERPROC)NULL);
 		//POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 		//ScreenToClient(hWnd, &pt);
 		if (auto it = find_if(_screenWnds, [pt](ScreenWnd& sw) { return sw.hit(pt); }); it != _screenWnds.end())
