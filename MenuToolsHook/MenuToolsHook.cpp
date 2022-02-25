@@ -32,35 +32,35 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static WPARAM lastHitTest = 0;
 	static bool dblClick = false;
 
-	static const UINT_PTR TIMER_ID = 13578;
+	//static const UINT_PTR TIMER_ID = 13578;
 
-	static UINT_PTR timer = NULL;
-	if(!timer)
-		timer = SetTimer(hWnd, TIMER_ID, 300, (TIMERPROC)NULL);
+	//static UINT_PTR timer = NULL;
+	//if(!timer)
+	//	timer = SetTimer(hWnd, TIMER_ID, 300, (TIMERPROC)NULL);
 
 
 	switch (message)
 	{
-	case WM_TIMER:
-	{
-		if (wParam == TIMER_ID) 
-		{
-			if (HIBYTE(GetAsyncKeyState(VK_LSHIFT)) && HIBYTE(GetAsyncKeyState(VK_LCONTROL)) && HIBYTE(GetAsyncKeyState(0x41)))
-			{
-				log_debug(L"Thats i!: {}", message);
-				RECT wr;
-				GetWindowRect(hWnd, &wr);
-				int caption = GetSystemMetrics(SM_CYCAPTION);
-				POINT pt = {
-					wr.left + ((wr.right - wr.left) / 2),
-					wr.top + (caption / 2)
-				};
-				PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
-			}
-			return TRUE;
-		}
-		break;
-	}
+	//case WM_TIMER:
+	//{
+	//	if (wParam == TIMER_ID) 
+	//	{
+	//		if (HIBYTE(GetAsyncKeyState(VK_LSHIFT)) && HIBYTE(GetAsyncKeyState(VK_LCONTROL)) && HIBYTE(GetAsyncKeyState(0x41)))
+	//		{
+	//			log_debug(L"Thats i!: {}", message);
+	//			RECT wr;
+	//			GetWindowRect(hWnd, &wr);
+	//			int caption = GetSystemMetrics(SM_CYCAPTION);
+	//			POINT pt = {
+	//				wr.left + ((wr.right - wr.left) / 2),
+	//				wr.top + (caption / 2)
+	//			};
+	//			PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
+	//		}
+	//		return TRUE;
+	//	}
+	//	break;
+	//}
 
 	case WM_CONTEXTMENU:
 	case WM_INITMENU:
