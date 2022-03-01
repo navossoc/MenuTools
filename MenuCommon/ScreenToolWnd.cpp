@@ -19,8 +19,9 @@ namespace
 	const std::wstring CLASS_NAME = L"ScreenToolWnd";
 	WNDCLASSW* wndClass = nullptr;
 
-	static const FLOAT F = 0.1f; // factor
-	static const UINT CLOSE_TIMER = 0x30;
+	const FLOAT F = 0.1f; // factor
+	const UINT CLOSE_TIMER = 0x30;
+	const UINT CLOSE_TIMEOUT = 3500;
 }
 RECT ScaleRect(RECT& in, FLOAT f);
 
@@ -109,12 +110,30 @@ public:
 		return PtInRect(&_prvRect, pt);
 	}
 
+	bool hit(const RECT& wr) // Window-Rect
+	{
+		return EqualRect(&_scrRect, &wr);
+	}
+
 	PositioningWnd* find(POINT pt)
 	{
 		using std::ranges::find_if;
 
 		auto &pw = _posititioningWnds;
 		if (auto it = find_if(pw.rbegin(), pw.rend(), [pt](PositioningWnd& pw) { return PtInRect(&pw.previewRect, pt); }); it != pw.rend())
+		{
+			return &*it;
+		}
+
+		return nullptr;
+	}
+
+	PositioningWnd* find(const RECT& wr) // Window-Rect
+	{
+		using std::ranges::find_if;
+
+		auto &pw = _posititioningWnds;
+		if (auto it = find_if(pw.rbegin(), pw.rend(), [wr](PositioningWnd& pw) { return EqualRect(&pw.screenRect, &wr); }); it != pw.rend())
 		{
 			return &*it;
 		}
@@ -300,30 +319,33 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		{1, 1, L"Left TwoThirds", 3, 6, 64, 92 },
 		{1, 1, L"Right Third", 67, 6, 31, 92 },
 
-		{1, 1, L"Small Wide Center", 15, 15, 70, 70, 0.7 },
+		{1, 1, L"Small Wide Center", 15, 15, 70, 70, 0.8 },
+		{1, 1, L"Mini Wide Center", 25, 25, 50, 50, 0.7 },
 
 		{1, 2, L"Left Third", 3, 6, 31, 92 },
 		{1, 2, L"Right TwoThirds", 34, 6, 64, 92 },
 
-		{1, 2, L"Big Wide Center", 3, 6, 95, 92, 0.7 },
+		{1, 2, L"Big Wide Center", 3, 6, 95, 92, 0.65 },
 
 		{1, 2, L"Left Half", 2, 2, 49, 96, 0.8 },
 		{1, 2, L"Right Half", 51, 2, 49, 96, 0.8 },
 
-		{1, 1, L"Top Left", 3, 3, 42, 42, 0.8 },
-		{1, 1, L"Top Right", 56, 3, 42, 42, 0.8 },
-		{1, 1, L"Bottom Left", 3, 56, 42, 42, 0.8 },
-		{1, 1, L"Bottom Right", 56, 56, 42, 42, 0.8 },
+		{1, 1, L"Top Left", 3, 0, 39, 50, 0.75 },
+		{1, 1, L"Top Right", 58, 0, 39, 50, 0.75 },
+		{1, 1, L"Bottom Left", 3, 50, 39, 50, 0.75 },
+		{1, 1, L"Bottom Right", 58, 50, 39, 50, 0.75 },
 
-		{2, 2, L"Big Height Center TwoThirds", 6, 4, 92, 95, 1.05 },
+		{2, 2, L"Top TwoThirds", 6, 3, 92, 60 , 1 },
+		{2, 2, L"Bottom Third", 6, 63, 92, 35 , 1 },
 
-		{2, 2, L"Top TwoThirds", 6, 3, 92, 65 , 0.9 },
-		{2, 2, L"Bottom Third", 6, 68, 92, 30 , 0.9 },
-		{2, 1, L"Top Third", 6, 3, 92, 30, 1.05},
-		{2, 1, L"Bottom TwoThirds", 6, 33, 92, 65, 1.05 },
+		{2, 1, L"Top Third", 6, 3, 92, 35, 1.05},
+		{2, 1, L"Bottom TwoThirds", 6, 38, 92, 60, 1.05 },
 
-		{2, 2, L"Top Half", 6, 3, 92, 46, 0.7 },
-		{2, 2, L"Bottom Half", 6, 52, 92, 46, 0.7 },
+		{2, 2, L"Top Half", 6, 3, 92, 46, 0.8 },
+		{2, 2, L"Bottom Half", 6, 52, 92, 46, 0.8 },
+
+
+		{2, 2, L"Big Height Center", 6, 4, 92, 95, 0.65 },
 
 		{2, 1, L"Right 1", 6, 03, 92, 10, 0.9 },
 		{2, 1, L"Right 2", 6, 15, 92, 10, 0.9 },
@@ -334,7 +356,8 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		{2, 1, L"Right 7", 6, 75, 92, 10, 0.9 },
 		{2, 1, L"Right 8", 6, 87, 92, 10, 0.9 },
 
-		{2, 1, L"Small Height Center TwoThirds", 15, 15, 70, 70, 0.7 }
+		{2, 1, L"Small Height Center TwoThirds", 15, 15, 70, 70, 0.7 },
+		{2, 1, L"Mini Height Center", 25, 25, 50, 50, 0.7 }
 };
 
 	using std::views::transform;
@@ -447,7 +470,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		::ShowWindow(_hWnd, SW_SHOW);
 		log_debug(L"ShowWindow, ScreenToolWnd::pWnd: {}", (void*)this);
 
-		SetTimer(_hWnd, CLOSE_TIMER, 5000, (TIMERPROC)NULL);
+		SetTimer(_hWnd, CLOSE_TIMER, CLOSE_TIMEOUT, (TIMERPROC)NULL);
 
 		HMODULE hModDll = GetModuleHandle(BUILD(MT_DLL_NAME));
 		if (hModDll != NULL)
@@ -484,6 +507,21 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	POINT pt = { 0 };
 	GetCursorPos(&pt);
 	ScreenToClient(hWnd, &pt);
+
+
+	HWND hParent = GetParent(hWnd);
+	RECT wr = {};
+	GetWindowRect(hParent, &wr);
+
+	PositioningWnd* fittingPosWnd = nullptr;
+	for (ScreenWnd& sw : _screenWnds)
+	{
+		if (PositioningWnd* posWnd = sw.find(wr))
+		{
+			fittingPosWnd = posWnd;
+			break;
+		}
+	}
 
 	//LONG ix = GetSystemMetrics(SM_CXBORDER) * 2;
 	//LONG iy = GetSystemMetrics(SM_CXBORDER) * 2;
@@ -556,8 +594,6 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 			RECT wr = _currentPosWnd->screenRect;
 
-			HWND hParent = GetParent(hWnd);
-
 			WINDOWPLACEMENT wp = { sizeof(WINDOWPLACEMENT) };
 			GetWindowPlacement(hParent, &wp);
 
@@ -590,7 +626,7 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 	case WM_MOUSEMOVE:
 	{
-		SetTimer(_hWnd, CLOSE_TIMER, 5000, (TIMERPROC)NULL);
+		SetTimer(_hWnd, CLOSE_TIMER, CLOSE_TIMEOUT, (TIMERPROC)NULL);
 		//POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 		//ScreenToClient(hWnd, &pt);
 		if (auto it = find_if(_screenWnds, [pt](ScreenWnd& sw) { return sw.hit(pt); }); it != _screenWnds.end())
@@ -753,6 +789,12 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		{
 			FillRect(hDC, &_currentPosWnd->previewRect, GetSysColorBrush(COLOR_ACTIVECAPTION));
 			FrameRect(hDC, &_currentPosWnd->previewRect, GetSysColorBrush(COLOR_HOTLIGHT));
+		}
+
+		if (fittingPosWnd)
+		{
+			//FillRect(hDC, &fittingPosWnd->previewRect, GetSysColorBrush(COLOR_ACTIVECAPTION));
+			FrameRect(hDC, &fittingPosWnd->previewRect, GetSysColorBrush(COLOR_WINDOWFRAME));
 		}
 
 

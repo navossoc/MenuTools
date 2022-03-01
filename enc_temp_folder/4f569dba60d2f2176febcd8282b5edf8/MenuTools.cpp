@@ -19,33 +19,24 @@ BOOL MenuTools::Install(HWND hWnd)
 
 	HMENU hMenuSystem = GetSystemMenu(hWnd, FALSE);
 
-	//if (!IsMenuItem(hMenuSystem, MT_MENU_CLOSE_WIN_POS))
-	//{
-	//	InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_CLOSE_WIN_POS, _T("&Close Positioning-Window"));
-	//}
-
-	if (!IsMenuItem(hMenuSystem, MT_MENU_INC_WIN_SIZE))
-	{
-		//InsertMenu(hMenuSystem, SC_CLOSE, MF_SEPARATOR, 0, NULL);
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_INC_WIN_SIZE, _T("&Inc Size of Window"));
-	}
-
-	if (!IsMenuItem(hMenuSystem, MT_MENU_DEC_WIN_SIZE))
-	{
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_DEC_WIN_SIZE, _T("&Dec Size of Window"));
-	}
-
-
 	if (!IsMenuItem(hMenuSystem, MT_MENU_OPEN_WIN_POS))
 	{
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_SEPARATOR, 0, NULL);
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_OPEN_WIN_POS, _T("Open P&ositioning-Window"));
 	}
-	if (!IsMenuItem(hMenuSystem, MT_MENU_SHOW_WIN_SIZE))
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_CLOSE_WIN_POS))
 	{
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_SHOW_WIN_SIZE, _T("&Show Size of Window"));
-		InsertMenu(hMenuSystem, SC_CLOSE, MF_SEPARATOR, 0, NULL);
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_CLOSE_WIN_POS, _T("&Close Positioning-Window"));
 	}
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_INC_WIN_SIZE))
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_INC_WIN_SIZE, _T("&Inc Size of Window"));
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_DEC_WIN_SIZE))
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_DEC_WIN_SIZE, _T("&Dec Size of Window"));
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_SHOW_WIN_SIZE))
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_SHOW_WIN_SIZE, _T("&Show Size of Window"));
 
 	if (!IsMenuItem(hMenuSystem, MT_MENU_PRIORITY))
 	{
@@ -370,7 +361,9 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			wr.left + ((wr.right - wr.left) / 2),
 			wr.top + (caption / 2)
 		};
-		PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(pt.x, pt.y));
+		PostMessage(hWnd, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
+		ScreenToClient(hWnd, &pt);
+		PostMessage(hWnd, WM_LBUTTONUP, 0, MAKELPARAM(pt.x, pt.y));
 		return TRUE;
 	}
 	
@@ -398,34 +391,27 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		RECT wr = {};
 		GetWindowRect(hWnd, &wr);
 
+		HWND hDesk = GetDesktopWindow();
+
 		auto vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
 		auto vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
 		auto vw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
 		auto vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-		RECT dr = { vx, vy, vx + vw, vy + vh };
 
+		RECT dr = { vx, vy, vx + vw, vy + vh };
+		//GetWindowRect(hDesk, &dr);
 		HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { sizeof(MONITORINFO) };
 		GetMonitorInfo(hMon, &mi);
 		auto mr = mi.rcWork;
 
-		auto x1 = (mr.right - mr.left) / 100.0;
-		auto y1 = (mr.bottom - mr.top) / 100.0;
-
-		auto px = std::round((wr.left - mr.left) / x1);
-		auto py = std::round((wr.top - mr.top) / y1);
-		auto pw = std::round((wr.right - wr.left) / x1);
-		auto ph = std::round((wr.bottom - wr.top) / y1);
-
 		std::wstring msg = std::format(
-			L"Window (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
-			L"Virtual (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
-			L"Monitor (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
-			L"Window (l, t, w, h) in percent: {}, {}, {}, {}\r\n"
+			L"Window-Size (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
+			L"Virtual-Size (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
+			L"Monitor-Size (l, t, w, h) in pixel: {}, {}, {}, {}\r\n"
 			, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top
 			, dr.left, dr.top, dr.right - dr.left, dr.bottom - dr.top
 			, mr.left, mr.top, mr.right - mr.left, mr.bottom - mr.top
-			, px, py, pw,ph
 		);
 		MessageBox(NULL, msg.c_str(), L"Window-Size", MB_ICONASTERISK | MB_OK);
 		return TRUE;
