@@ -199,7 +199,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		auto now = std::chrono::high_resolution_clock::now();
 
 
-		POINT& lbd = lastButtonDown;
+		//POINT& lbd = lastButtonDown;
 		//POINT bu = {
 		//	GET_X_LPARAM(lParam),
 		//	GET_Y_LPARAM(lParam)
@@ -438,7 +438,7 @@ LRESULT CALLBACK CallKeyboardMsg(
 		}
 		if(ScreenToolWnd::pWnd)
 		{
-			BOOL upFlag = (HIWORD(lParam) & KF_UP) == KF_UP;  // transition-state flag, 1 on keyup
+			//BOOL upFlag = (HIWORD(lParam) & KF_UP) == KF_UP;  // transition-state flag, 1 on keyup
 			//ScreenToolWnd::pWnd->WndProc(ScreenToolWnd::pWnd->GetHwnd(), upFlag ? WM_KEYUP:WM_KEYDOWN, wParam, lParam);
 		}
 	}
