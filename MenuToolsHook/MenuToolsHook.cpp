@@ -200,11 +200,11 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 		//POINT& lbd = lastButtonDown;
-		//POINT bu = {
-		//	GET_X_LPARAM(lParam),
-		//	GET_Y_LPARAM(lParam)
-		//};
-		//ClientToScreen(hWnd, &bu);
+		POINT bu = {
+			GET_X_LPARAM(lParam),
+			GET_Y_LPARAM(lParam)
+		};
+		ClientToScreen(hWnd, &bu);
 
 		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
 		//double dbl_click = GetDoubleClickTime();
@@ -220,6 +220,8 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//{
 		//	return FALSE;
 		//}
+		if (SendMessage(hWnd, WM_NCHITTEST, wParam, MAKELPARAM(bu.x, bu.y)) != HTCAPTION)
+			return FALSE;
 
 		if (is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
 		{
