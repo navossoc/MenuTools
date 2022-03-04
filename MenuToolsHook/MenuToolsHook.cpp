@@ -91,12 +91,22 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 		break;
 	}
-	case WM_LBUTTONDOWN: 
+	//case WM_LBUTTONDOWN: 
 	case WM_NCLBUTTONDOWN: 
 	{
 		dblClick = false;
 		last_lbutton_down = std::chrono::high_resolution_clock::now();
-		if (wParam == HTCAPTION) 
+
+		POINT	bd = {										// button down
+				GET_X_LPARAM(lParam),
+				GET_Y_LPARAM(lParam)
+			};
+		ClientToScreen(hWnd, &bd);
+		auto ch = GetSystemMetrics(SM_CYCAPTION); // caption height
+		RECT cr;												// caption rect
+		GetWindowRect(hWnd, &cr);
+		cr.bottom = cr.top + ch;
+		if (!PtInRect(&cr, bd))
 		{
 			lastButtonDown = {
 				GET_X_LPARAM(lParam),
@@ -110,24 +120,33 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				return TRUE;						
 			}
 
-			BYTE ks = HIBYTE(GetAsyncKeyState(VK_CONTROL) + GetAsyncKeyState(VK_SHIFT));
-			if(!ks)
+			//BYTE ks = HIBYTE(GetAsyncKeyState(VK_CONTROL) + GetAsyncKeyState(VK_SHIFT));
+			//if(!ks)
 			//if (!is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
-			{
-				POINT lbd = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-				std::thread t([hWnd, wParam, lbd]()
-					{
-						auto toWait = GetDoubleClickTime();
-						Sleep(toWait);
+			//{
+			POINT lbd = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+			std::thread t([hWnd, wParam, lbd]()
+				{
+					auto toWait = GetDoubleClickTime() / 2;
+					Sleep(toWait);
 
+
+					if (!HIBYTE(GetAsyncKeyState(VK_LBUTTON))) {
 						POINT pt;
 						GetCursorPos(&pt);
-						if (!HIBYTE(GetAsyncKeyState(VK_LBUTTON))) {
-							log_debug(L"LButton is up: {}, {}", pt.x, pt.y);
-							const LONG XTOL = GetSystemMetrics(SM_CXDOUBLECLK) / 2;
-							const LONG YTOL = GetSystemMetrics(SM_CYDOUBLECLK) / 2;
-							RECT tolerance = { lbd.x - XTOL, lbd.y - YTOL, lbd.x + XTOL, lbd.y + YTOL };
-							if (PtInRect(&tolerance, pt))
+						const LONG XTOL = GetSystemMetrics(SM_CXDOUBLECLK) / 2;
+						const LONG YTOL = GetSystemMetrics(SM_CYDOUBLECLK) / 2;
+						RECT tolerance = { lbd.x - XTOL, lbd.y - YTOL, lbd.x + XTOL, lbd.y + YTOL };
+						log_debug(L"LButton is up: {}, {}", pt.x, pt.y);
+
+						if (PtInRect(&tolerance, pt))
+						{
+							if (HIBYTE(GetAsyncKeyState(VK_CONTROL)) || HIBYTE(GetAsyncKeyState(VK_SHIFT)))
+							{
+								LONG diff = HIBYTE(GetAsyncKeyState(VK_CONTROL)) ? 10 : -10;
+								InflateWnd(diff, hWnd);
+							}
+							else
 							{
 								log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
 								{
@@ -139,9 +158,11 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							}
 
 						}
+
 					}
-				);
-				t.detach();
+				}
+			);
+			t.detach();
 
 				//TCHAR buffer[MAX_PATH] = { 0 };
 				//TCHAR* out;
@@ -167,7 +188,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				//	{
 				//	}
 				//}
-			}
+			//}
 
 		}
 		else
@@ -199,68 +220,73 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		auto now = std::chrono::high_resolution_clock::now();
 
 
-		//POINT& lbd = lastButtonDown;
-		POINT bu = {
-			GET_X_LPARAM(lParam),
-			GET_Y_LPARAM(lParam)
-		};
-		ClientToScreen(hWnd, &bu);
+	//	//POINT& lbd = lastButtonDown;
+	//	POINT bu = {										// button up
+	//		GET_X_LPARAM(lParam),
+	//		GET_Y_LPARAM(lParam)
+	//	};
+	//	ClientToScreen(hWnd, &bu);
 
-		std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
-		//double dbl_click = GetDoubleClickTime();
+	//	std::chrono::duration<double, std::milli> millis = now - last_lbutton_down;
+	//	//double dbl_click = GetDoubleClickTime();
 
-		log_debug(L"LButtonUp: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
+	//	log_debug(L"LButtonUp: {}, {}, duration: {}", GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), millis.count());
 
-		//if (millis.count() <= dbl_click)
-			//return FALSE;
+	//	//if (millis.count() <= dbl_click)
+	//		//return FALSE;
 
-		//static const LONG TOL = 1;
-		//RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
-		//if (!PtInRect(&tolerance, bu))
-		//{
-		//	return FALSE;
-		//}
-		if (SendMessage(hWnd, WM_NCHITTEST, wParam, MAKELPARAM(bu.x, bu.y)) != HTCAPTION)
-			return FALSE;
+	//	//static const LONG TOL = 1;
+	//	//RECT tolerance = { lbd.x - TOL, lbd.y - TOL, lbd.x + TOL, lbd.y + TOL };
+	//	//if (!PtInRect(&tolerance, bu))
+	//	//{
+	//	//	return FALSE;
+	//	//}
+	//	auto ch = GetSystemMetrics(SM_CYCAPTION); // caption height
+	//	RECT cr;												// caption rect
+	//	GetWindowRect(hWnd, &cr);
+	//	cr.bottom = cr.top + ch;
+	//	if(!PtInRect(&cr, bu))
+	//	//if (SendMessage(hWnd, WM_NCHITTEST, wParam, MAKELPARAM(bu.x, bu.y)) != HTCAPTION)
+	//		return FALSE;
 
-		if (is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
-		{
-			LONG diff = wParam == MK_CONTROL ? 10 : -10;
-			InflateWnd(diff, hWnd);
-		}
-		else
-		{
-			//wParam = SendMessage(hWnd, WM_NCHITTEST, wParam, lParam);
+	//	if (is_one_of((signed)wParam, MK_CONTROL, MK_SHIFT))
+	//	{
+	//		LONG diff = wParam == MK_CONTROL ? 10 : -10;
+	//		InflateWnd(diff, hWnd);
+	//	}
+	//	else
+	//	{
+	//		//wParam = SendMessage(hWnd, WM_NCHITTEST, wParam, lParam);
 
-			//// Title bar
-			//if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
-			//{
-			//	log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
-			//	if (ScreenToolWnd::pWnd)
-			//	{
-			//		ScreenToolWnd::pWnd.reset();
-			//	}
-			//	else
-			//	{
-			//		/*PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));*/
-			//		//std::async(std::launch::async, [hWnd, wParam, bu]()
-			//		std::thread t([hWnd, wParam, bu]()
-			//			{
-			//				Sleep(100);
-			//				if (!dblClick) 
-			//				{
-			//					PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));
-			//					//ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
-			//				}
-			//			}
-			//		);
-			//		t.detach();
-			//		//if (SendMessage(hWnd, WM_NCHITTEST, wParam, MAKELPARAM(bu.x, bu.y)) == HTCAPTION)
-			//		//if (!dblClick)
-			//		//	ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
-			//	}
-			//}
-		}
+	//		//// Title bar
+	//		//if(!ScreenToolWnd::IsScreenToolWnd(hWnd))
+	//		//{
+	//		//	log_debug(L"ScreenToolWnd::pWnd: {}", (void*)ScreenToolWnd::pWnd.get());
+	//		//	if (ScreenToolWnd::pWnd)
+	//		//	{
+	//		//		ScreenToolWnd::pWnd.reset();
+	//		//	}
+	//		//	else
+	//		//	{
+	//		//		/*PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));*/
+	//		//		//std::async(std::launch::async, [hWnd, wParam, bu]()
+	//		//		std::thread t([hWnd, wParam, bu]()
+	//		//			{
+	//		//				Sleep(100);
+	//		//				if (!dblClick) 
+	//		//				{
+	//		//					PostMessage(hWnd, WM_SHOW_WIN_POS, wParam, MAKELPARAM(bu.x, bu.y));
+	//		//					//ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
+	//		//				}
+	//		//			}
+	//		//		);
+	//		//		t.detach();
+	//		//		//if (SendMessage(hWnd, WM_NCHITTEST, wParam, MAKELPARAM(bu.x, bu.y)) == HTCAPTION)
+	//		//		//if (!dblClick)
+	//		//		//	ScreenToolWnd::pWnd = ScreenToolWnd::ShowWindow(hInst, hWnd, WM_LBUTTONUP, wParam, MAKELPARAM(bu.x, bu.y));
+	//		//	}
+	//		//}
+	//	}
 
 		return FALSE;
 	}
