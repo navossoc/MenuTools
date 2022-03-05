@@ -106,7 +106,8 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		RECT cr;												// caption rect
 		GetWindowRect(hWnd, &cr);
 		cr.bottom = cr.top + ch;
-		if (!PtInRect(&cr, bd))
+		//if (!PtInRect(&cr, bd))
+		if (wParam == HTCAPTION)
 		{
 			lastButtonDown = {
 				GET_X_LPARAM(lParam),
@@ -356,6 +357,7 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			// Uninstall menus
 			MenuTools::Uninstall(hWnd);
+			//FreeLibraryAndExitThread(hInst, 0);
 			return TRUE;
 		}
 	}

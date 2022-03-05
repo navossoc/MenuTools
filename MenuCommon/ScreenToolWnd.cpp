@@ -312,7 +312,12 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 #ifdef _WIN64
 	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&monInfos);
 #endif
-	
+	if (monInfos.empty())
+	{
+		RECT wa = { 0 };
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &wa, 0);
+		monInfos.push_back(wa);
+	}
 	//std::vector<RECT> scrRects;
 	// MonNr, PrvNr, Name, Left%, Top%, Width%, Height%
 	PositioningCfgs winPositions = {
