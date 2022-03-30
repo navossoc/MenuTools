@@ -52,6 +52,7 @@ private:
 	RECT calcScreenRect();
 	RECT calcPreviewRect();
 
+
 public:
 	RECT screenRect;
 	RECT previewRect;
@@ -138,6 +139,43 @@ public:
 			return &*it;
 		}
 
+		return nullptr;
+	}
+
+	PositioningWnd* next(PositioningWnd* curWnd)
+	{
+		using std::ranges::find_if;
+
+		auto& pw = _posititioningWnds;
+
+		if (curWnd == nullptr)
+			return &pw.front();
+
+		auto wr = curWnd->screenRect;
+		if (auto it = find_if(pw.begin(), pw.end(), [wr](PositioningWnd& pw) { return EqualRect(&pw.screenRect, &wr); }); it != pw.end())
+		{
+			if (++it == pw.end())
+				return nullptr;
+			return &*it;
+		}
+		return nullptr;
+	}
+
+	PositioningWnd* prev(PositioningWnd* curWnd)
+	{
+		using std::ranges::find_if;
+		auto& pw = _posititioningWnds;
+
+		if (curWnd == nullptr)
+			return &pw.back();
+
+		auto wr = curWnd->screenRect;
+		if (auto it = find_if(pw.rbegin(), pw.rend(), [wr](PositioningWnd& pw) { return EqualRect(&pw.screenRect, &wr); }); it != pw.rend())
+		{
+			if (++it == pw.rend())
+				return nullptr;
+			return &*it;
+		}
 		return nullptr;
 	}
 
@@ -248,6 +286,68 @@ struct ScreenToolWnd::Impl
 	//std::vector<RECT> _realScrRects, _previwScrRects, _realPosRects, _previewPosRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	
+	void nextPosWnd()
+	{
+		RECT before = _currentPosWnd ? _currentPosWnd->previewRect : RECT{};
+		if (_currentScreenWnd == nullptr)
+		{ 
+			_currentScreenWnd = &_screenWnds.front();
+			_currentPosWnd = _currentScreenWnd->next(_currentPosWnd);
+		}
+		else
+		{
+			_currentPosWnd = _currentScreenWnd->next(_currentPosWnd);
+			if (_currentPosWnd == nullptr)
+			{
+				using std::ranges::find_if;
+
+				RECT wr = _currentScreenWnd->pr;
+				if (auto it = find_if(_screenWnds.begin(), _screenWnds.end(), [wr](ScreenWnd& sw) { RECT wr1 = sw.pr; return EqualRect(&wr1, &wr); }); it != _screenWnds.end())
+				{
+					if (++it == _screenWnds.end())
+						it = _screenWnds.begin();
+					_currentScreenWnd = &*it;
+					InvalidateRect(_hWnd, &before, TRUE);
+					return nextPosWnd();
+				}
+			}
+		}
+		RECT after = _currentPosWnd ? _currentPosWnd->previewRect : RECT{};
+		InvalidateRect(_hWnd, &before, TRUE);
+		InvalidateRect(_hWnd, &after, TRUE);
+	}
+
+	void prevPosWnd()
+	{
+		RECT before = _currentPosWnd ? _currentPosWnd->previewRect : RECT{};
+		if (_currentScreenWnd == nullptr)
+		{ 
+			_currentScreenWnd = &_screenWnds.back();
+			_currentPosWnd = _currentScreenWnd->prev(_currentPosWnd);
+		}
+		else
+		{
+			_currentPosWnd = _currentScreenWnd->prev(_currentPosWnd);
+			if (_currentPosWnd == nullptr)
+			{
+				using std::ranges::find_if;
+
+				RECT wr = _currentScreenWnd->pr;
+				if (auto it = find_if(_screenWnds.rbegin(), _screenWnds.rend(), [wr](ScreenWnd& sw) { RECT wr1 = sw.pr; return EqualRect(&wr1, &wr); }); it != _screenWnds.rend())
+				{
+					if (++it == _screenWnds.rend())
+						it = _screenWnds.rbegin();
+					_currentScreenWnd = &*it;
+					InvalidateRect(_hWnd, &before, TRUE);
+					return prevPosWnd();
+				}
+			}
+		}
+		RECT after = _currentPosWnd ? _currentPosWnd->previewRect : RECT{};
+		InvalidateRect(_hWnd, &before, TRUE);
+		InvalidateRect(_hWnd, &after, TRUE);
+	}
+
 	template<typename It, typename Ct>
 	inline It NextPos(It it, Ct& posRects);
 	template<typename It, typename Ct>
@@ -565,7 +665,16 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	}
 
 	case WM_MOUSEWHEEL:
-	{
+	{		
+		if (_currentScreenWnd)
+		{
+			int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+			if (delta < 0)
+				_currentPosWnd = _currentScreenWnd->prev(_currentPosWnd);
+			else if (delta > 0)
+				_currentPosWnd = _currentScreenWnd->next(_currentPosWnd);
+		}
+
 		//POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 		//ScreenToClient(hWnd, &pt);
 
@@ -590,6 +699,54 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		//log_debug(L"MouseWheel, Delta: {}, X: {}, Y: {}\n", delta, pt.x, pt.y);
 		break;
 	}
+
+	case WM_KEYDOWN:
+	{
+		if (wParam == VK_ESCAPE)
+		{
+			ScreenToolWnd::pWnd.reset();
+			return  DefWindowProc(hWnd, message, wParam, lParam);
+		}
+		else if (is_one_of(wParam, VK_DOWN, VK_RIGHT, VK_UP, VK_LEFT))
+		{
+			SetTimer(_hWnd, CLOSE_TIMER, CLOSE_TIMEOUT, (TIMERPROC)NULL);
+			if (is_one_of(wParam, VK_DOWN, VK_RIGHT))
+				nextPosWnd();
+			else //if (is_one_of(wParam, VK_UP, VK_LEFT))
+				prevPosWnd();
+		}
+		//else if (wParam == VK_RETURN)
+		//{
+		//	if (auto scr_it = std::ranges::find_if(_previwScrRects, [this](RECT& r) { return EqualRect(&_currentPreviewScr, &r); }); scr_it != _previwScrRects.end())
+		//	{
+		//		if (auto pos_it = std::ranges::find_if(_previewPosRects, [this](RECT& r) {return EqualRect(&r, &_currentPreviewPos); }); pos_it != _previewPosRects.end())
+		//		{
+		//			size_t i1 = std::distance(_previewPosRects.begin(), pos_it);
+		//			size_t i2 = std::distance(_previwScrRects.begin(), scr_it);
+		//			if (i1 < _realPosRects.size() && i2 < _realScrRects.size())
+		//			{
+		//				RECT r = _realPosRects[i1];
+		//				RECT scr = _realScrRects[i2];
+
+		//				HWND hParent = GetParent(hWnd);
+		//				SetWindowPos(hParent, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+		//			}
+		//		}
+		//	}
+
+		//	ScreenToolWnd::pWnd.reset();
+		return  DefWindowProc(hWnd, message, wParam, lParam);
+		//}
+		//else
+		//{
+		//	wchar_t strDataToSend[32];
+		//	wsprintf(strDataToSend, L"%c", wParam);
+		//	MessageBox(NULL, strDataToSend, L"keyselected", MB_OK);
+		//}
+		break;
+
+	} // end switch
+
 
 	case WM_LBUTTONDOWN:
 	{
@@ -704,64 +861,6 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		//}
 		break;
 	}
-
-	case WM_KEYDOWN: 
-	{
-		if (wParam == VK_ESCAPE)
-		{
-			ScreenToolWnd::pWnd.reset();
-			return  DefWindowProc(hWnd, message, wParam, lParam);
-		}
-		//else if (is_one_of(wParam, VK_DOWN, VK_RIGHT, VK_UP, VK_LEFT))
-		//{
-		//	if (auto it = std::ranges::find_if(_previewPosRects, [this](RECT& r) {
-		//		bool res = EqualRect(&_currentPreviewPos, &r);
-		//		return res;
-		//		}); it != _previewPosRects.end())
-		//	{
-		//		if (is_one_of(wParam, VK_DOWN, VK_RIGHT))
-		//			it = NextPos(it, _previewPosRects);
-		//		else //if (is_one_of(wParam, VK_UP, VK_LEFT))
-		//			it = PreviousPos(it, _previewPosRects);
-		//		_currentPreviewPos = *it;
-		//	}
-		//	else
-		//	{
-		//		if (!_previewPosRects.empty())
-		//			_currentPreviewPos = _previewPosRects.front();
-		//	}
-		//}
-		//else if (wParam == VK_RETURN)
-		//{
-		//	if (auto scr_it = std::ranges::find_if(_previwScrRects, [this](RECT& r) { return EqualRect(&_currentPreviewScr, &r); }); scr_it != _previwScrRects.end())
-		//	{
-		//		if (auto pos_it = std::ranges::find_if(_previewPosRects, [this](RECT& r) {return EqualRect(&r, &_currentPreviewPos); }); pos_it != _previewPosRects.end())
-		//		{
-		//			size_t i1 = std::distance(_previewPosRects.begin(), pos_it);
-		//			size_t i2 = std::distance(_previwScrRects.begin(), scr_it);
-		//			if (i1 < _realPosRects.size() && i2 < _realScrRects.size())
-		//			{
-		//				RECT r = _realPosRects[i1];
-		//				RECT scr = _realScrRects[i2];
-
-		//				HWND hParent = GetParent(hWnd);
-		//				SetWindowPos(hParent, HWND_NOTOPMOST, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
-		//			}
-		//		}
-		//	}
-
-		//	ScreenToolWnd::pWnd.reset();
-			return  DefWindowProc(hWnd, message, wParam, lParam);
-		//}
-		//else
-		//{
-		//	wchar_t strDataToSend[32];
-		//	wsprintf(strDataToSend, L"%c", wParam);
-		//	MessageBox(NULL, strDataToSend, L"keyselected", MB_OK);
-		//}
-		break;
-
-	} // end switch
 
 	case WM_PAINT:
 	{
