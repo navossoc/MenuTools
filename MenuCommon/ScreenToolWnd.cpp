@@ -259,16 +259,6 @@ using SelectionWnds = std::vector<SelectionWnd>;
 
 extern HINSTANCE hInst;  // current instance
 
-BOOL Monitorenumproc(HMONITOR hMon, HDC hDC, LPRECT pRECT, LPARAM lParam)
-{
-	std::vector<RECT>& mInfos = *(std::vector<RECT>*)lParam;
-	MONITORINFOEX mi = { 0 };
-	mi.cbSize = sizeof(MONITORINFOEX);
-	GetMonitorInfo(hMon, &mi);
-	mInfos.push_back(mi.rcWork);
-	return TRUE;
-}
-
 RECT ScaleRect(RECT& in, FLOAT f)
 {
 	RECT r = { 0 };
@@ -407,6 +397,16 @@ BOOL ScreenToolWnd::IsScreenToolWnd(HWND hWnd)
 } 
 
 
+BOOL CALLBACK Monitorenumproc(HMONITOR hMon, HDC hDC, LPRECT pRECT, LPARAM lParam)
+{
+	std::vector<RECT>& mInfos = *(std::vector<RECT>*)lParam;
+	MONITORINFOEX mi = { 0 };
+	mi.cbSize = sizeof(MONITORINFOEX);
+	GetMonitorInfo(hMon, &mi);
+	mInfos.push_back(mi.rcWork);
+	return TRUE;
+}
+
 ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wParam, LPARAM lParam)
 	:_hWnd(nullptr)
 {
@@ -425,9 +425,8 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	}
 	_clickPoint = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 	std::vector<RECT> monInfos;
-#ifdef _WIN64
 	EnumDisplayMonitors(NULL, NULL, Monitorenumproc, (LPARAM)&monInfos);
-#endif
+
 	if (monInfos.empty())
 	{
 		RECT wa = { 0 };
@@ -589,6 +588,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	{
 		hWndToImplMap[_hWnd] = this;
 		::ShowWindow(_hWnd, SW_SHOW);
+		::SetFocus(_hWnd);
 		log_debug(L"ShowWindow, ScreenToolWnd::pWnd: {}", (void*)this);
 
 		SetTimer(_hWnd, CLOSE_TIMER, CLOSE_TIMEOUT, (TIMERPROC)NULL);

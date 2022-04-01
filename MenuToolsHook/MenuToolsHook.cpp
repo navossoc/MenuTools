@@ -61,6 +61,10 @@ LRESULT CALLBACK HookProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	//	}
 	//	break;
 	//}
+	//case WM_KEYDOWN:
+	//{
+	//	log_debug(L"Hello");
+	//}
 
 	case WM_CONTEXTMENU:
 	case WM_INITMENU:
