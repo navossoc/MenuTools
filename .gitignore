@@ -157,3 +157,4 @@ $RECYCLE.BIN/
 
 .vs/
 tools/wndsync.ini
+enc_temp_folder/
