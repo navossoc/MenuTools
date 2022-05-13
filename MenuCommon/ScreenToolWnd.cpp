@@ -77,8 +77,8 @@ struct ScreenWnd {
 	}
 
 	void Paint(PAINTSTRUCT& ps, HDC hDC);
-	
-	void push_back(PositioningCfg& wp) { 
+
+	void push_back(PositioningCfg& wp) {
 		return _posititioningWnds.push_back(PositioningWnd(wp, this));
 	}
 
@@ -122,7 +122,7 @@ public:
 	{
 		using std::ranges::find_if;
 
-		auto &pw = _posititioningWnds;
+		auto& pw = _posititioningWnds;
 		if (auto it = find_if(pw.rbegin(), pw.rend(), [pt](PositioningWnd& pw) { return PtInRect(&pw.previewRect, pt); }); it != pw.rend())
 		{
 			return &*it;
@@ -135,7 +135,7 @@ public:
 	{
 		using std::ranges::find_if;
 
-		auto &pw = _posititioningWnds;
+		auto& pw = _posititioningWnds;
 		if (auto it = find_if(pw.rbegin(), pw.rend(), [wr](PositioningWnd& pw) { return EqualRect(&pw.screenRect, &wr); }); it != pw.rend())
 		{
 			return &*it;
@@ -161,7 +161,7 @@ public:
 		{
 			if (++it == pws.end())
 			{
-				if (pt == nullptr) 
+				if (pt == nullptr)
 					return nullptr;
 				it = pws.begin();
 			}
@@ -188,7 +188,7 @@ public:
 		{
 			if (++it == pws.end())
 			{
-				if (pt == nullptr) 
+				if (pt == nullptr)
 					return nullptr;
 				it = pws.begin();
 			}
@@ -247,7 +247,7 @@ RECT PositioningWnd::calcPreviewRect()
 	int iy = static_cast<int>(((h * 1.0) - (h * pc.prvFactor)) / 2.0);
 	InflateRect(&r, -ix, -iy);
 
-	r = ScaleRect(r, F);	
+	r = ScaleRect(r, F);
 	return r;
 }
 
@@ -277,8 +277,11 @@ RECT ScaleRect(RECT& in, FLOAT f)
 struct ScreenToolWnd::Impl
 {
 	Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wParam, LPARAM lParam);
+
+	PositioningCfgs ReadPositioningCfgs();
+
 	~Impl();
-			
+
 	HHOOK _hhkCallKeyboardMsg = 0;
 	HWND _hWnd = 0;
 
@@ -294,12 +297,12 @@ struct ScreenToolWnd::Impl
 	//std::vector<RECT> _realScrRects, _previwScrRects, _realPosRects, _previewPosRects;
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	void OnKeyDown(UINT virtualKey);
-	
+
 	void nextPosWnd(POINT* pt = nullptr)
 	{
 		RECT before = _currentPosWnd ? _currentPosWnd->previewRect : RECT{};
 		if (_currentScreenWnd == nullptr)
-		{ 
+		{
 			_currentScreenWnd = &_screenWnds.front();
 			_currentPosWnd = _currentScreenWnd->next(_currentPosWnd);
 		}
@@ -330,7 +333,7 @@ struct ScreenToolWnd::Impl
 	{
 		RECT before = _currentPosWnd ? _currentPosWnd->previewRect : RECT{};
 		if (_currentScreenWnd == nullptr)
-		{ 
+		{
 			_currentScreenWnd = &_screenWnds.back();
 			_currentPosWnd = _currentScreenWnd->prev(_currentPosWnd);
 		}
@@ -382,12 +385,12 @@ HWND ScreenToolWnd::GetHwnd()
 
 LRESULT ScreenToolWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	return _pImpl->WndProc(hWnd, message, wParam,lParam);
+	return _pImpl->WndProc(hWnd, message, wParam, lParam);
 }
 
 VOID ScreenToolWnd::OnKeyDown(UINT virtualKey)
 {
-	if(_pImpl)
+	if (_pImpl)
 		_pImpl->OnKeyDown(virtualKey);
 }
 
@@ -403,7 +406,7 @@ BOOL ScreenToolWnd::IsScreenToolWnd(HWND hWnd)
 	static wchar_t className[100] = { L'\0' };
 	GetClassName(hWnd, className, 99);
 	return CLASS_NAME.compare(className) == 0;
-} 
+}
 
 
 BOOL CALLBACK Monitorenumproc(HMONITOR hMon, HDC hDC, LPRECT pRECT, LPARAM lParam)
@@ -444,57 +447,14 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	}
 	//std::vector<RECT> scrRects;
 	// MonNr, PrvNr, Name, Left%, Top%, Width%, Height%
-	PositioningCfgs winPositions = {
-		{1, 1, L"Left TwoThirds", 3, 6, 64, 92 },
-		{1, 1, L"Right Third", 67, 6, 31, 92 },
-
-		{1, 1, L"Small Wide Center", 15, 15, 70, 70, 0.8 },
-		{1, 1, L"Mini Wide Center", 25, 25, 50, 50, 0.7 },
-
-		{1, 2, L"Left Third", 3, 6, 31, 92 },
-		{1, 2, L"Right TwoThirds", 34, 6, 64, 92 },
-
-		{1, 2, L"Big Wide Center", 3, 6, 95, 92, 0.65 },
-
-		{1, 2, L"Left Half", 2, 2, 49, 96, 0.8 },
-		{1, 2, L"Right Half", 51, 2, 49, 96, 0.8 },
-
-		{1, 1, L"Top Left", 3, 0, 39, 50, 0.75 },
-		{1, 1, L"Top Right", 58, 0, 39, 50, 0.75 },
-		{1, 1, L"Bottom Left", 3, 50, 39, 50, 0.75 },
-		{1, 1, L"Bottom Right", 58, 50, 39, 50, 0.75 },
-
-		{2, 2, L"Top TwoThirds", 6, 3, 92, 60 , 1 },
-		{2, 2, L"Bottom Third", 6, 63, 92, 35 , 1 },
-
-		{2, 1, L"Top Third", 6, 3, 92, 35, 1.05},
-		{2, 1, L"Bottom TwoThirds", 6, 38, 92, 60, 1.05 },
-
-		{2, 2, L"Top Half", 6, 3, 92, 46, 0.8 },
-		{2, 2, L"Bottom Half", 6, 52, 92, 46, 0.8 },
-
-
-		{2, 2, L"Big Height Center", 6, 4, 92, 95, 0.65 },
-
-		{2, 1, L"Right 1", 6, 03, 92, 10, 0.9 },
-		{2, 1, L"Right 2", 6, 15, 92, 10, 0.9 },
-		{2, 1, L"Right 3", 6, 27, 92, 10, 0.9 },
-		{2, 1, L"Right 4", 6, 39, 92, 10, 0.9 },
-		{2, 1, L"Right 5", 6, 51, 92, 10, 0.9 },
-		{2, 1, L"Right 6", 6, 63, 92, 10, 0.9 },
-		{2, 1, L"Right 7", 6, 75, 92, 10, 0.9 },
-		{2, 1, L"Right 8", 6, 87, 92, 10, 0.9 },
-
-		{2, 1, L"Small Height Center TwoThirds", 15, 15, 70, 70, 0.7 },
-		{2, 1, L"Mini Height Center", 25, 25, 50, 50, 0.7 }
-};
+	PositioningCfgs winPositions = ReadPositioningCfgs();
 
 	using std::views::transform;
 	//using std::views::filter;
 	using std::ranges::min;
 	using std::ranges::max;
 
-	 // determine offset from screens with different resolutions
+	// determine offset from screens with different resolutions
 	LONG ox = min(monInfos | transform([](const RECT& r) {return r.left; }));
 	LONG oy = min(monInfos | transform([](const RECT& r) {return r.top; }));
 
@@ -502,7 +462,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	for (UINT mi = 0, baseOffset = 0; mi < monInfos.size(); ++mi) // monitor-index
 	{
 		auto wps = filter(winPositions, [mi](const PositioningCfg& pc) { return (mi + 1) == pc.monNr; });
-		if(wps.empty())
+		if (wps.empty())
 			continue;
 
 		// the number of previews for this monitor
@@ -530,7 +490,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 					return false;
 			};
 
-			for (PositioningCfg& wp : wps | filter( belongToScreenWnd )) {
+			for (PositioningCfg& wp : wps | filter(belongToScreenWnd)) {
 				sw.push_back(wp);
 			}
 
@@ -549,10 +509,10 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 	for (ScreenWnd& sw : _screenWnds)
 	{
 		RECT sr = sw.sr;
-		_toolRect.left = std::min( sr.left, _toolRect.left );
-		_toolRect.top = std::min( sr.top, _toolRect.top );
-		_toolRect.right = std::max( sr.right, _toolRect.right );
-		_toolRect.bottom = std::max( sr.bottom, _toolRect.bottom );
+		_toolRect.left = std::min(sr.left, _toolRect.left);
+		_toolRect.top = std::min(sr.top, _toolRect.top);
+		_toolRect.right = std::max(sr.right, _toolRect.right);
+		_toolRect.bottom = std::max(sr.bottom, _toolRect.bottom);
 	}
 
 	_toolRect = ScaleRect(_toolRect, F);
@@ -581,7 +541,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		WS_EX_TOPMOST, // | WS_EX_TOOLWINDOW,// Optional window styles.
 		CLASS_NAME.c_str(),                     // Window class
 		L"Pick a rectangle",    // Window text
-		WS_POPUP | WS_VISIBLE | WS_BORDER,           
+		WS_POPUP | WS_VISIBLE | WS_BORDER,
 		//WS_OVERLAPPEDWINDOW, // Window style
 
 		// Size and position
@@ -617,11 +577,11 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 
 DWORD WINAPI KeyThread(LPVOID)
 {
-	while(ScreenToolWnd::pWnd)
+	while (ScreenToolWnd::pWnd)
 	{
 		auto vks = { VK_RETURN, VK_LEFT, VK_RIGHT, VK_UP, VK_DIVIDE };
-		for(auto vk : vks)
-		{ 
+		for (auto vk : vks)
+		{
 			if (HIBYTE(GetAsyncKeyState(vk)))
 				ScreenToolWnd::pWnd->OnKeyDown(vk);
 		}
@@ -636,7 +596,7 @@ ScreenToolWnd::Impl::~Impl()
 
 		hWndToImplMap.erase(_hWnd);
 		//SendMessage(_hWnd, WM_CLOSE, 0, 0);
-		if(IsWindow(_hWnd))
+		if (IsWindow(_hWnd))
 			DestroyWindow(_hWnd);
 	}
 }
@@ -689,12 +649,12 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	//auto posRects = std::ranges::filter_view(_previewPosRects, [pt](RECT r) { return PtInRect(&r, pt); });
 
 	switch (message)
-	{		
-	//case WM_CREATE:
-	//{
-	//	SetTimer(hWnd, 13, 25000, (TIMERPROC)NULL);
-	//	break;
-	//}
+	{
+		//case WM_CREATE:
+		//{
+		//	SetTimer(hWnd, 13, 25000, (TIMERPROC)NULL);
+		//	break;
+		//}
 	case WM_TIMER:
 	{
 		if (wParam == CLOSE_TIMER)
@@ -804,7 +764,7 @@ LRESULT ScreenToolWnd::Impl::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			PositioningWnd* posWnd = sw.find(pt);
 			if (_currentPosWnd != posWnd)
 			{
-				if(_currentPosWnd)
+				if (_currentPosWnd)
 					InvalidateRect(hWnd, &_currentPosWnd->previewRect, TRUE);
 				_currentPosWnd = posWnd;
 				if (_currentPosWnd)
@@ -864,7 +824,7 @@ LRESULT ScreenToolWnd::Impl::ToolWndProc(HWND hWnd, UINT message, WPARAM wParam,
 }
 
 template<typename It, typename Ct>
-inline It ScreenToolWnd::Impl::NextPos(It it, Ct& posRects)
+inline It ScreenToolWnd::Impl::NextPos(It it, Ct & posRects)
 {
 	if (it == posRects.end())
 		it = posRects.begin();
@@ -875,7 +835,7 @@ inline It ScreenToolWnd::Impl::NextPos(It it, Ct& posRects)
 }
 
 template<typename It, typename Ct>
-inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct& posRects)
+inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct & posRects)
 {
 	if (it == posRects.begin())
 		it = (--posRects.end());
@@ -885,6 +845,54 @@ inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct& posRects)
 	return it;
 }
 
+PositioningCfgs ScreenToolWnd::Impl::ReadPositioningCfgs()
+{
+	static PositioningCfgs defaultWinPositions = {
+		{1, 1, L"Left TwoThirds", 3, 6, 64, 92 },
+		{ 1, 1, L"Right Third", 67, 6, 31, 92 },
+
+		{ 1, 1, L"Small Wide Center", 15, 15, 70, 70, 0.8 },
+		{ 1, 1, L"Mini Wide Center", 25, 25, 50, 50, 0.7 },
+
+		{ 1, 2, L"Left Third", 3, 6, 31, 92 },
+		{ 1, 2, L"Right TwoThirds", 34, 6, 64, 92 },
+
+		{ 1, 2, L"Big Wide Center", 3, 6, 95, 92, 0.65 },
+
+		{ 1, 2, L"Left Half", 2, 2, 49, 96, 0.8 },
+		{ 1, 2, L"Right Half", 51, 2, 49, 96, 0.8 },
+
+		{ 1, 1, L"Top Left", 3, 0, 39, 50, 0.75 },
+		{ 1, 1, L"Top Right", 58, 0, 39, 50, 0.75 },
+		{ 1, 1, L"Bottom Left", 3, 50, 39, 50, 0.75 },
+		{ 1, 1, L"Bottom Right", 58, 50, 39, 50, 0.75 },
+
+		{ 2, 2, L"Top TwoThirds", 6, 3, 92, 60 , 1 },
+		{ 2, 2, L"Bottom Third", 6, 63, 92, 35 , 1 },
+
+		{ 2, 1, L"Top Third", 6, 3, 92, 35, 1.05 },
+		{ 2, 1, L"Bottom TwoThirds", 6, 38, 92, 60, 1.05 },
+
+		{ 2, 2, L"Top Half", 6, 3, 92, 46, 0.8 },
+		{ 2, 2, L"Bottom Half", 6, 52, 92, 46, 0.8 },
+
+
+		{ 2, 2, L"Big Height Center", 6, 4, 92, 95, 0.65 },
+
+		{ 2, 1, L"Right 1", 6, 03, 92, 10, 0.9 },
+		{ 2, 1, L"Right 2", 6, 15, 92, 10, 0.9 },
+		{ 2, 1, L"Right 3", 6, 27, 92, 10, 0.9 },
+		{ 2, 1, L"Right 4", 6, 39, 92, 10, 0.9 },
+		{ 2, 1, L"Right 5", 6, 51, 92, 10, 0.9 },
+		{ 2, 1, L"Right 6", 6, 63, 92, 10, 0.9 },
+		{ 2, 1, L"Right 7", 6, 75, 92, 10, 0.9 },
+		{ 2, 1, L"Right 8", 6, 87, 92, 10, 0.9 },
+
+		{ 2, 1, L"Small Height Center TwoThirds", 15, 15, 70, 70, 0.7 },
+		{ 2, 1, L"Mini Height Center", 25, 25, 50, 50, 0.7 }
+	};
+	return defaultWinPositions;
+}
 
 //RECT ScreenToolWnd::Impl::Calculate(PositioningCfg& wp, Screen& s)
 //{
