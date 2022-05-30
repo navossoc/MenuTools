@@ -27,5 +27,5 @@ inline void log_debug(std::wstring&& msg)
 
 template<typename... Tx>
 inline void log_debug(std::wstring&& f, Tx&&... px) {
-	log_debug(std::format(f, std::forward<Tx>(px)...));
+	//log_debug(std::format(f, std::forward<Tx>(px)...));
 }
