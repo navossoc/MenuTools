@@ -548,7 +548,7 @@ ScreenToolWnd::Impl::Impl(HINSTANCE hInst, HWND hParent, UINT message, WPARAM wP
 		//CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 		_toolRect.left, _toolRect.top, w, h,
 
-		hParent,       // Parent window    
+		hParent,       // Parent window
 		NULL,       // Menu
 		hInst,     // Instance handle
 		NULL        // Additional application data
@@ -845,6 +845,57 @@ inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct & posRects)
 	return it;
 }
 
+#pragma warning(push)
+#pragma warning( disable : 33010 26451 26495 26819 )
+#include "../rapidjson/filereadstream.h"
+#include "../rapidjson/filewritestream.h"
+#include "../rapidjson/document.h"
+#include <../rapidjson/writer.h>
+#include <cstdio>
+#include <processenv.h>
+#include <locale>
+#include <codecvt>
+#include <fstream>
+
+namespace {
+	const char *defaultWinPositionsStr = R"(
+{
+	"winPositions": [
+		{ "monNr": 1, "prvNr": 1, "x":  3, "y":  6, "w": 64, "h": 92, "name": "Left TwoThirds"												},
+		{ "monNr": 1, "prvNr": 1, "x": 67, "y":  6, "w": 31, "h": 92, "name": "Right Third"													},
+		{ "monNr": 1, "prvNr": 1, "x": 15, "y": 15, "w": 70, "h": 70, "name": "Small Wide Center",				"prvFactor": 0.8	},
+		{ "monNr": 1, "prvNr": 1, "x": 25, "y": 25, "w": 50, "h": 50, "name": "Mini Wide Center",					"prvFactor": 0.7	},
+		{ "monNr": 1, "prvNr": 2, "x":  3, "y":  6, "w": 31, "h": 92, "name": "Left Third"													},
+		{ "monNr": 1, "prvNr": 2, "x": 34, "y":  6, "w": 64, "h": 92, "name": "Right TwoThirds"											},
+		{ "monNr": 1, "prvNr": 2, "x":  3, "y":  6, "w": 95, "h": 92, "name": "Big Wide Center",					"prvFactor": 0.65	},
+		{ "monNr": 1, "prvNr": 2, "x":  2, "y":  2, "w": 49, "h": 96, "name": "Left Half",							"prvFactor": 0.8	},
+		{ "monNr": 1, "prvNr": 2, "x": 51, "y":  2, "w": 49, "h": 96, "name": "Right Half",				 			"prvFactor": 0.8	},
+		{ "monNr": 1, "prvNr": 1, "x":  3, "y":  0, "w": 39, "h": 50, "name": "Top Left",				 			"prvFactor": 0.75	},
+		{ "monNr": 1, "prvNr": 1, "x": 58, "y":  0, "w": 39, "h": 50, "name": "Top Right",				 			"prvFactor": 0.75	},
+		{ "monNr": 1, "prvNr": 1, "x":  3, "y": 50, "w": 39, "h": 50, "name": "Bottom Left",			 			"prvFactor": 0.75	},
+		{ "monNr": 1, "prvNr": 1, "x": 58, "y": 50, "w": 39, "h": 50, "name": "Bottom Right",			 			"prvFactor": 0.75	},
+		{ "monNr": 2, "prvNr": 2, "x":  6, "y":  3, "w": 92, "h": 60, "name": "Top TwoThirds",			 			"prvFactor": 1.0	},
+		{ "monNr": 2, "prvNr": 2, "x":  6, "y": 63, "w": 92, "h": 35, "name": "Bottom Third",			 			"prvFactor": 1.0	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y":  3, "w": 92, "h": 35, "name": "Top Third",				 			"prvFactor": 1.05	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 38, "w": 92, "h": 60, "name": "Bottom TwoThirds",		 			"prvFactor": 1.05	},
+		{ "monNr": 2, "prvNr": 2, "x":  6, "y":  3, "w": 92, "h": 46, "name": "Top Half",				 			"prvFactor": 0.8	},
+		{ "monNr": 2, "prvNr": 2, "x":  6, "y": 52, "w": 92, "h": 46, "name": "Bottom Half",			 			"prvFactor": 0.8	},
+		{ "monNr": 2, "prvNr": 2, "x":  6, "y":  4, "w": 92, "h": 95, "name": "Big Height Center",	 			"prvFactor": 0.65	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y":  3, "w": 92, "h": 10, "name": "Right 1",					 			"prvFactor": 0.9	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 15, "w": 92, "h": 10, "name": "Right 2",					 			"prvFactor": 0.9	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 27, "w": 92, "h": 10, "name": "Right 3",					 			"prvFactor": 0.9	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 39, "w": 92, "h": 10, "name": "Right 4",					 			"prvFactor": 0.9	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 51, "w": 92, "h": 10, "name": "Right 5",					 			"prvFactor": 0.9	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 63, "w": 92, "h": 10, "name": "Right 6",					 			"prvFactor": 0.9	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 75, "w": 92, "h": 10, "name": "Right 7",					 			"prvFactor": 0.9	},
+		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 87, "w": 92, "h": 10, "name": "Right 8",					 			"prvFactor": 0.9	},
+		{ "monNr": 2, "prvNr": 1, "x": 15, "y": 15, "w": 70, "h": 70, "name": "Small Height Center TwoThirds","prvFactor": 0.7	},
+		{ "monNr": 2, "prvNr": 1, "x": 25, "y": 25, "w": 50, "h": 50, "name": "Mini Height Center", 				"prvFactor": 0.7	}
+	]
+}
+)";
+}
+
 PositioningCfgs ScreenToolWnd::Impl::ReadPositioningCfgs()
 {
 	static PositioningCfgs defaultWinPositions = {
@@ -879,7 +930,7 @@ PositioningCfgs ScreenToolWnd::Impl::ReadPositioningCfgs()
 
 		{ 2, 2, L"Big Height Center", 6, 4, 92, 95, 0.65 },
 
-		{ 2, 1, L"Right 1", 6, 03, 92, 10, 0.9 },
+		{ 2, 1, L"Right 1", 6,  3, 92, 10, 0.9 },
 		{ 2, 1, L"Right 2", 6, 15, 92, 10, 0.9 },
 		{ 2, 1, L"Right 3", 6, 27, 92, 10, 0.9 },
 		{ 2, 1, L"Right 4", 6, 39, 92, 10, 0.9 },
@@ -891,12 +942,87 @@ PositioningCfgs ScreenToolWnd::Impl::ReadPositioningCfgs()
 		{ 2, 1, L"Small Height Center TwoThirds", 15, 15, 70, 70, 0.7 },
 		{ 2, 1, L"Mini Height Center", 25, 25, 50, 50, 0.7 }
 	};
-	return defaultWinPositions;
+
+	using namespace rapidjson;
+
+
+	char buffer[4096] = {0};
+	char path[MAX_PATH];
+	ExpandEnvironmentStringsA(R"(%APPDATA%\MenuTools\PositioningCfgs.json)", path, MAX_PATH);
+
+	FILE* fp = nullptr;
+	errno_t res = fopen_s(&fp, path, "rb"); // non-Windows use "r"
+	if (fp == nullptr)
+	{
+		char dir[MAX_PATH];
+		ExpandEnvironmentStringsA(R"(%APPDATA%\MenuTools)", dir, MAX_PATH);
+
+		CreateDirectoryA(dir, NULL);
+		{
+			std::ofstream os(path);
+			os << defaultWinPositionsStr << std::endl;
+		}
+
+		res = fopen_s(&fp, path, "rb"); // non-Windows use "r"
+		assert(fp != nullptr);
+
+		//Document d;
+		//d.Parse(defaultWinPositionsStr);
+
+		//errno_t res = fopen_s(&fp, path, "wb"); // non-Windows use "w"
+		//if (fp == nullptr)
+		//	throw std::runtime_error(std::format("{} could not be written", path));
+
+		////char writeBuffer[65536];
+		//FileWriteStream os(fp, buffer, sizeof(buffer));
+
+		//Writer<FileWriteStream> writer(os);
+		//d.Accept(writer);
+
+		//fclose(fp);
+
+		//return defaultWinPositions;
+	}
+
+	//char readBuffer[65536];
+	FileReadStream is(fp, buffer, sizeof(buffer));
+
+	Document d;
+	d.ParseStream(is);
+
+	const Value& wpJson = d["winPositions"];
+	assert(wpJson.IsArray());
+
+	PositioningCfgs winPositions;
+
+	//std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+	for (SizeType i = 0; i < wpJson.Size(); i++) // Uses SizeType instead of size_t
+	{
+		auto& wp = wpJson[i];
+		std::string n = wp["name"].GetString();
+		float prvFactor = wp.HasMember("prvFactor") ? wp["prvFactor"].GetFloat() : 1.0f;
+		PositioningCfg positioningCfg = {
+			wp["monNr"].GetInt(),
+			wp["prvNr"].GetInt(),
+			wstring(n.begin(), n.end()),
+			wp["x"].GetInt(),
+			wp["y"].GetInt(),
+			wp["w"].GetInt(),
+			wp["h"].GetInt(),
+			prvFactor
+		};
+		winPositions.push_back(positioningCfg);
+	}
+
+	fclose(fp);
+
+	return winPositions;
 }
 
 //RECT ScreenToolWnd::Impl::Calculate(PositioningCfg& wp, Screen& s)
 //{
-//	RECT r = { 
+//	RECT r = {
 //		static_cast<LONG>(s.x + wp.x * (s.w / 100.0)),
 //		static_cast<LONG>(s.y + wp.y * (s.h / 100.0)),
 //	};
@@ -905,3 +1031,4 @@ PositioningCfgs ScreenToolWnd::Impl::ReadPositioningCfgs()
 //	return r;
 //}
 
+#pragma warning(pop)

@@ -112,7 +112,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;..\MenuTools;..\rapidjson\include\rapidjson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;..\MenuTools;C:\Projects\MenuTools\rapidjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
@@ -150,7 +150,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;..\MenuTools;..\rapidjson\include\rapidjson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;..\MenuTools;C:\Projects\MenuTools\rapidjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
@@ -167,6 +167,39 @@
     <ClInclude Include="..\MenuCommon\ScreenToolWnd.h" />
     <ClInclude Include="..\MenuCommon\TrayIcon.h" />
     <ClInclude Include="..\MenuToolsHook\MenuTools.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\cursorstreamwrapper.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\document.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\encodedstream.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\encodings.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\filereadstream.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\filewritestream.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\fwd.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\biginteger.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\clzll.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\diyfp.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\dtoa.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\ieee754.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\itoa.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\meta.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\pow10.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\regex.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\stack.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\strfunc.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\strtod.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\internal\swap.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\istreamwrapper.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\memorybuffer.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\memorystream.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\ostreamwrapper.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\pointer.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\prettywriter.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\rapidjson.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\reader.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\schema.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\stream.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\stringbuffer.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\uri.h" />
+    <ClInclude Include="..\rapidjson\include\rapidjson\writer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Resource.h" />
