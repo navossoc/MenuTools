@@ -389,7 +389,7 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	{
 		char dir[MAX_PATH];
 		ExpandEnvironmentStringsA(R"(%APPDATA%\MenuTools)", dir, MAX_PATH);
-		std::string cmd = "explorer ";
+		std::string cmd = "start ";
 		cmd += dir;
 		system(cmd.c_str());
 		return TRUE;

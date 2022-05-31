@@ -861,57 +861,6 @@ inline It ScreenToolWnd::Impl::PreviousPos(It it, Ct & posRects)
 #include <codecvt>
 #include <fstream>
 
-namespace {
-	const char *defaultWinPositionsStr = R"(
-
-{
-	"winPositions": [
-		{ "monNr": 1, "prvNr": 1, "x":  3, "y":  6, "w": 64, "h": 92, "name": "Left TwoThirds"												},
-		{ "monNr": 1, "prvNr": 1, "x": 34, "y":  6, "w": 64, "h": 92, "name": "Right TwoThirds"											},
-		{ "monNr": 1, "prvNr": 1, "x": 15, "y": 15, "w": 70, "h": 70, "name": "Small Wide Center",				"prvFactor": 0.9	},
-		{ "monNr": 1, "prvNr": 1, "x": 25, "y": 25, "w": 50, "h": 50, "name": "Mini Wide Center",					"prvFactor": 0.7	},
-		{ "monNr": 1, "prvNr": 1, "x":  3, "y":  0, "w": 39, "h": 50, "name": "Top Left",				 			"prvFactor": 0.65	},
-		{ "monNr": 1, "prvNr": 1, "x": 58, "y":  0, "w": 39, "h": 50, "name": "Top Right",				 			"prvFactor": 0.65	},
-		{ "monNr": 1, "prvNr": 1, "x":  3, "y": 50, "w": 39, "h": 50, "name": "Bottom Left",			 			"prvFactor": 0.65	},
-		{ "monNr": 1, "prvNr": 1, "x": 58, "y": 50, "w": 39, "h": 50, "name": "Bottom Right",			 			"prvFactor": 0.65	},
-
-		{ "monNr": 1, "prvNr": 2, "x":  3, "y":  6, "w": 31, "h": 92, "name": "Left Third"													},
-		{ "monNr": 1, "prvNr": 2, "x": 34, "y":  6, "w": 31, "h": 92, "name": "Middle Third"													},
-		{ "monNr": 1, "prvNr": 2, "x": 67, "y":  6, "w": 31, "h": 92, "name": "Right Third"													},
-		{ "monNr": 1, "prvNr": 2, "x":  3, "y":  6, "w": 95, "h": 92, "name": "Big Wide Center",					"prvFactor": 0.8	},
-		{ "monNr": 1, "prvNr": 2, "x":  2, "y":  2, "w": 49, "h": 96, "name": "Left Half",							"prvFactor": 0.65	},
-		{ "monNr": 1, "prvNr": 2, "x": 51, "y":  2, "w": 49, "h": 96, "name": "Right Half",				 			"prvFactor": 0.65	},
-
-		// { "monNr": 1, "prvNr": 3, "x":  2, "y":   2, "w": 96, "h": 30, "name": "Top Third",							"prvFactor": 1	},
-		// { "monNr": 1, "prvNr": 3, "x":  2, "y":  34, "w": 96, "h": 30, "name": "Middle Third",				 		"prvFactor": 1	},
-		// { "monNr": 1, "prvNr": 3, "x":  2, "y":  66, "w": 96, "h": 30, "name": "Bottom Third",				 		"prvFactor": 1	},
-
-		{ "monNr": 2, "prvNr": 2, "x":  6, "y":  3, "w": 92, "h": 60, "name": "Top TwoThirds",			 			"prvFactor": 1.0	},
-		{ "monNr": 2, "prvNr": 2, "x":  6, "y": 63, "w": 92, "h": 35, "name": "Bottom Third",			 			"prvFactor": 1.0	},
-
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y":  3, "w": 92, "h": 35, "name": "Top Third",				 			"prvFactor": 1.05	},
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 38, "w": 92, "h": 60, "name": "Bottom TwoThirds",		 			"prvFactor": 1.05	},
-
-		{ "monNr": 2, "prvNr": 2, "x":  6, "y":  3, "w": 92, "h": 46, "name": "Top Half",				 			"prvFactor": 0.8	},
-		{ "monNr": 2, "prvNr": 2, "x":  6, "y": 52, "w": 92, "h": 46, "name": "Bottom Half",			 			"prvFactor": 0.8	},
-		{ "monNr": 2, "prvNr": 2, "x":  6, "y":  4, "w": 92, "h": 95, "name": "Big Height Center",	 			"prvFactor": 0.65	},
-
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y":  3, "w": 92, "h": 10, "name": "Right 1",					 			"prvFactor": 0.9	},
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 15, "w": 92, "h": 10, "name": "Right 2",					 			"prvFactor": 0.9	},
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 27, "w": 92, "h": 10, "name": "Right 3",					 			"prvFactor": 0.9	},
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 39, "w": 92, "h": 10, "name": "Right 4",					 			"prvFactor": 0.9	},
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 51, "w": 92, "h": 10, "name": "Right 5",					 			"prvFactor": 0.9	},
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 63, "w": 92, "h": 10, "name": "Right 6",					 			"prvFactor": 0.9	},
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 75, "w": 92, "h": 10, "name": "Right 7",					 			"prvFactor": 0.9	},
-		{ "monNr": 2, "prvNr": 1, "x":  6, "y": 87, "w": 92, "h": 10, "name": "Right 8",					 			"prvFactor": 0.9	},
-
-		{ "monNr": 2, "prvNr": 1, "x": 15, "y": 15, "w": 70, "h": 70, "name": "Small Height Center TwoThirds","prvFactor": 0.7	},
-		{ "monNr": 2, "prvNr": 1, "x": 25, "y": 25, "w": 50, "h": 50, "name": "Mini Height Center", 				"prvFactor": 0.7	},
-	]
-}
-)";
-}
-
 void ScreenToolWnd::Impl::ReadConfig()
 {
 	using namespace rapidjson;
@@ -961,7 +910,7 @@ R"(
 PositioningCfgs ScreenToolWnd::Impl::ReadPositioningCfgs()
 {
 	using namespace rapidjson;
-#pragma region Cfg
+#pragma region PositioningCfgs
 	static const char* defaultWinPositionsStr = R"(
 {
 	"winPositions": [
@@ -1009,7 +958,7 @@ PositioningCfgs ScreenToolWnd::Impl::ReadPositioningCfgs()
 	]
 }
 )";
-#pragma endregion Cfg
+#pragma endregion PositioningCfgs
 	char buffer[4096] = {0};
 	char path[MAX_PATH];
 	ExpandEnvironmentStringsA(R"(%APPDATA%\MenuTools\PositioningCfgs.jsonc)", path, MAX_PATH);
