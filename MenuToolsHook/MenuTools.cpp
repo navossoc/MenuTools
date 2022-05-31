@@ -41,6 +41,13 @@ BOOL MenuTools::Install(HWND hWnd)
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_SEPARATOR, 0, NULL);
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_OPEN_WIN_POS, _T("Open P&ositioning-Window"));
 	}
+
+	if (!IsMenuItem(hMenuSystem, MT_MENU_SHOW_CFG_DIR))
+	{
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_SEPARATOR, 0, NULL);
+		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_SHOW_CFG_DIR, _T("Open &Config-Folder"));
+	}
+
 	if (!IsMenuItem(hMenuSystem, MT_MENU_SHOW_WIN_SIZE))
 	{
 		InsertMenu(hMenuSystem, SC_CLOSE, MF_BYCOMMAND | MF_STRING, MT_MENU_SHOW_WIN_SIZE, _T("&Show Size of Window"));
@@ -106,6 +113,10 @@ BOOL MenuTools::Uninstall(HWND hWnd)
 		bSuccess = FALSE;
 	}
 	if (!DeleteMenu(hMenuSystem, MT_MENU_OPEN_WIN_POS, MF_BYCOMMAND))
+	{
+		bSuccess = FALSE;
+	}
+	if (!DeleteMenu(hMenuSystem, MT_MENU_SHOW_CFG_DIR, MF_BYCOMMAND))
 	{
 		bSuccess = FALSE;
 	}
@@ -374,6 +385,15 @@ BOOL MenuTools::WndProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 	}
 	
+	case MT_MENU_SHOW_CFG_DIR:
+	{
+		char dir[MAX_PATH];
+		ExpandEnvironmentStringsA(R"(%APPDATA%\MenuTools)", dir, MAX_PATH);
+		std::string cmd = "explorer ";
+		cmd += dir;
+		system(cmd.c_str());
+		return TRUE;
+	}
 
 	case MT_MENU_CLOSE_WIN_POS:
 	{

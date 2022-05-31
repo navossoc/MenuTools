@@ -47,6 +47,7 @@ using std::wstring;
 #define MT_MENU_INC_WIN_SIZE				WM_USER + 0x2060
 #define MT_MENU_DEC_WIN_SIZE				WM_USER + 0x2070
 #define MT_MENU_SHOW_WIN_SIZE				WM_USER + 0x2080
+#define MT_MENU_SHOW_CFG_DIR				WM_USER + 0x2090
 
 // Menu -> Priority
 #define MT_MENU_PRIORITY_REALTIME		WM_USER + 0x2110
